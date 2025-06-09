@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Quizzes for Course</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    header {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+    header button {
+      background-color: white;
+      border: none;
+      color: #007bff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    header button:hover {
+      background-color: #e9ecef;
+    }
+    main {
+      padding: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: white;
+      border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    table th, table td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: left;
+    }
+    table th {
+      background-color: #007bff;
+      color: white;
+    }
+    .dialog-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      display: none; /* Hidden by default */
+    }
+    .dialog-box {
+      background-color: white;
+      border-radius: 8px;
+      padding: 20px;
+      width: 500px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    .dialog-box h2 {
+      margin-top: 0;
+    }
+    .dialog-box button {
+      margin-top: 15px;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+    }
+    .dialog-box .close-btn {
+      background-color: #dc3545;
+      color: white;
+    }
+    .dialog-box .close-btn:hover {
+      background-color: #c82333;
+    }
+    .dialog-box .save-btn {
+      background-color: #007bff;
+      color: white;
+    }
+    .dialog-box .save-btn:hover {
+      background-color: #0056b3;
+    }
+    .dialog-box input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .dialog-box ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+    .dialog-box ul li {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      cursor: pointer;
+    }
+    .dialog-box ul li:hover {
+      background-color: #f4f4f4;
+    }
+    .dialog-box ul li:last-child {
+      border-bottom: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Manage Quizzes for Course</h1>
+    <div>
+      <button onclick="backToCourses()">Back to Courses</button>
+      <button onclick="openAddQuizDialog()">Add Quiz</button>
+    </div>
+  </header>
+  <main>
+    <h2 id="courseTitle">Course: Loading...</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Quiz Title</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="courseQuizzesTable">
+        <!-- Quizzes dynamically loaded -->
+      </tbody>
+    </table>
+  </main>
+
+  <!-- Add Quiz Dialog -->
+  <div class="dialog-overlay" id="addQuizDialog">
+    <div class="dialog-box">
+      <h2>Add Quiz</h2>
+      <input type="text" id="quizSearchInput" placeholder="Search quizzes by title" oninput="searchQuizzes()">
+      <ul id="quizSearchResults">
+        <!-- Quiz search results dynamically added here -->
+      </ul>
+      <button class="save-btn" onclick="addQuizToCourse()">Add</button>
+      <button class="close-btn" onclick="closeAddQuizDialog()">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    const courseId = new URLSearchParams(window.location.search).get("courseId");
+    let associatedQuizzes = [];
+    let allQuizzes = [];
+    let selectedQuizId = null;
+
+    const fetchCourseDetails = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/api/courses/${courseId}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch course details.");
+
+        const course = await response.json();
+        document.getElementById("courseTitle").textContent = `Course: ${course.title}`;
+      } catch (error) {
+        console.error("Error fetching course details:", error);
+        alert("Failed to fetch course details. Please try again.");
+      }
+    };
+
+    const fetchCourseQuizzes = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/api/courses/${courseId}/quizzes`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch quizzes for the course.");
+
+        associatedQuizzes = await response.json();
+        renderCourseQuizzes();
+      } catch (error) {
+        console.error("Error fetching course quizzes:", error);
+        alert("Failed to fetch quizzes. Please try again.");
+      }
+    };
+
+    const renderCourseQuizzes = () => {
+      const tableBody = document.getElementById("courseQuizzesTable");
+      tableBody.innerHTML = associatedQuizzes
+        .map(
+          (quiz) => `
+          <tr>
+            <td>${quiz.title}</td>
+            <td>
+              <button onclick="removeQuizFromCourse('${quiz._id}')">Remove</button>
+            </td>
+          </tr>
+        `
+        )
+        .join("");
+    };
+
+    const fetchAllQuizzes = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/quizzes", {
+          headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch all quizzes.");
+
+        allQuizzes = await response.json();
+      } catch (error) {
+        console.error("Error fetching all quizzes:", error);
+      }
+    };
+
+    const openAddQuizDialog = () => {
+      document.getElementById("addQuizDialog").style.display = "flex";
+      document.getElementById("quizSearchInput").value = "";
+      document.getElementById("quizSearchResults").innerHTML = "";
+      selectedQuizId = null;
+    };
+
+    const closeAddQuizDialog = () => {
+      document.getElementById("addQuizDialog").style.display = "none";
+    };
+
+    const searchQuizzes = () => {
+      const searchTerm = document.getElementById("quizSearchInput").value.toLowerCase();
+      const results = allQuizzes.filter(
+        (quiz) =>
+          quiz.title.toLowerCase().includes(searchTerm) &&
+          !associatedQuizzes.some((q) => q._id === quiz._id)
+      );
+
+      const resultsList = document.getElementById("quizSearchResults");
+      resultsList.innerHTML = results
+        .map(
+          (quiz) => `
+          <li onclick="selectQuiz('${quiz._id}')">${quiz.title}</li>
+        `
+        )
+        .join("");
+    };
+
+    const selectQuiz = (quizId) => {
+      selectedQuizId = quizId;
+      Array.from(document.querySelectorAll("#quizSearchResults li")).forEach(
+        (li) => (li.style.backgroundColor = "")
+      );
+      const selectedLi = Array.from(document.querySelectorAll("#quizSearchResults li")).find(
+        (li) => li.textContent === allQuizzes.find((q) => q._id === quizId).title
+      );
+      selectedLi.style.backgroundColor = "#007bff";
+      selectedLi.style.color = "white";
+    };
+
+    const addQuizToCourse = async () => {
+      if (!selectedQuizId) {
+        alert("Please select a quiz to add.");
+        return;
+      }
+
+      try {
+        const response = await fetch(`http://localhost:5000/api/courses/${courseId}/quizzes`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ quizIds: [selectedQuizId] }),
+        });
+
+        if (response.ok) {
+          alert("Quiz added successfully!");
+          closeAddQuizDialog();
+          fetchCourseQuizzes();
+        } else {
+          const errorData = await response.json();
+          alert(errorData.error || "Failed to add quiz.");
+        }
+      } catch (error) {
+        console.error("Error adding quiz:", error);
+        alert("An error occurred. Please try again.");
+      }
+    };
+
+    const removeQuizFromCourse = async (quizId) => {
+      try {
+        const response = await fetch(`http://localhost:5000/api/courses/${courseId}/quizzes/${quizId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
+        });
+
+        if (response.ok) {
+          alert("Quiz removed successfully!");
+          fetchCourseQuizzes();
+        } else {
+          const errorData = await response.json();
+          alert(errorData.error || "Failed to remove quiz.");
+        }
+      } catch (error) {
+        console.error("Error removing quiz:", error);
+        alert("An error occurred. Please try again.");
+      }
+    };
+
+    const backToCourses = () => {
+      // Navigate back and refresh `view-courses.html`
+      window.location.href = "/view-courses.html#refresh";
+    };
+
+    window.onload = () => {
+      fetchCourseDetails();
+      fetchCourseQuizzes();
+      fetchAllQuizzes();
+    };
+  </script>
+</body>
+</html>

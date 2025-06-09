@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View Courses</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    header {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+    }
+    header h1 {
+      margin: 0;
+    }
+    header button {
+      float: right;
+      background-color: white;
+      border: none;
+      color: #007bff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    header button:hover {
+      background-color: #e9ecef;
+    }
+    main {
+      padding: 20px;
+    }
+    input {
+      margin-bottom: 15px;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: 100%;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: white;
+      border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    table th, table td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: left;
+    }
+    table th {
+      background-color: #007bff;
+      color: white;
+    }
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 20px;
+    }
+    .pagination button {
+      margin: 0 5px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+    .pagination button:disabled {
+      background-color: #ddd;
+      color: gray;
+      cursor: not-allowed;
+    }
+    .pagination button:hover:not(:disabled) {
+      background-color: #0056b3;
+    }
+
+   .dialog-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      display: none; /* Hidden by default */
+    }
+    .dialog-box {
+      background-color: white;
+      border-radius: 8px;
+      padding: 20px;
+      width: 400px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    .dialog-box h2 {
+      margin-top: 0;
+    }
+    .dialog-box button {
+      margin-top: 15px;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+    }
+    .dialog-box .close-btn {
+      background-color: #dc3545;
+      color: white;
+    }
+    .dialog-box .close-btn:hover {
+      background-color: #c82333;
+    }
+    .dialog-box .save-btn {
+      background-color: #007bff;
+      color: white;
+    }
+    .dialog-box .save-btn:hover {
+      background-color: #0056b3;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+  </style>
+</head>
+<body>
+  <header>
+    <h1>View All Courses</h1>
+    <div>
+      <button onclick="window.location.href='/index.html'">Back to Dashboard</button>
+      <button id="addCourseButton" onclick="openAddCourseDialog()">Add New Course</button>
+    </div>
+  </header>
+  <main>
+    <div>
+      <input type="text" id="filterTitle" placeholder="Filter by Course Title" oninput="applyFilters()">
+      <input type="text" id="filterDescription" placeholder="Filter by Description" oninput="applyFilters()">
+      <input type="text" id="filterCategory" placeholder="Filter by Category" oninput="applyFilters()">
+    </div>
+
+    <table id="coursesTable">
+      <thead>
+        <tr>
+          <th>Course Title</th>
+          <th>Description</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>Total Duration</th>
+          <th>Has Quiz</th>
+          <th>Created At</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Rows dynamically generated -->
+      </tbody>
+    </table>
+
+    <div class="pagination">
+      <button id="prevPage" onclick="changePage(-1)" disabled>Previous</button>
+      <span id="pageInfo">Page 1</span>
+      <button id="nextPage" onclick="changePage(1)" disabled>Next</button>
+    </div>
+  </main>
+
+    <!-- Update Course Dialog -->
+  <div class="dialog-overlay" id="updateCourseDialog">
+    <div class="dialog-box">
+      <h2>Update Course</h2>
+      <form id="updateCourseForm">
+        <input type="hidden" id="updateCourseId">
+        <label for="updateCourseTitle">Title</label>
+        <input type="text" id="updateCourseTitle" required>
+        <label for="updateDescription">Description</label>
+        <textarea id="updateDescription" required></textarea>
+        <label for="updateCategory">Category</label>
+        <input type="text" id="updateCategory" required>
+        <label for="updatePrice">Price</label>
+        <input type="number" id="updatePrice" required>        
+        <button type="submit" class="save-btn">Save Changes</button>
+        <button type="button" class="close-btn" onclick="closeUpdateDialog()">Cancel</button>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- Add Course Dialog -->
+  <div class="dialog-overlay" id="addCourseDialog">
+    <div class="dialog-box">
+      <h2>Add New Course</h2>
+      <form id="addCourseForm">
+        <label for="addCourseTitle">Title</label>
+        <input type="text" id="addCourseTitle" required placeholder="Enter course title">
+        <label for="addCourseDescription">Description</label>
+        <textarea id="addCourseDescription" rows="3" required placeholder="Enter course description"></textarea>
+        <label for="addCourseCategory">Category</label>
+        <input type="text" id="addCourseCategory" required placeholder="Enter course category">
+        <label for="addCoursePrice">Price</label>
+        <input type="number" id="addCoursePrice" required placeholder="Enter course price">
+        <button type="submit" class="save-btn">Add Course</button>
+        <button type="button" class="close-btn" onclick="closeAddCourseDialog()">Cancel</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let originalCourses = []; // Stores the original unfiltered courses
+    let allCourses = [];      // Stores the currently displayed courses
+    let currentPage = 1;
+    const coursesPerPage = 5;
+
+    const fetchCourses = async () => {
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        window.location.href = "/login.html";
+        return;
+      }
+
+      try {
+        const response = await fetch("http://localhost:5000/api/courses", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch courses");
+
+        const courses = await response.json();
+        originalCourses = courses.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        allCourses = [...originalCourses]; // Clone the originalCourses array
+        renderCourses();
+        updatePaginationControls();
+      } catch (error) {
+        console.error(error.message);
+      }
+    };
+
+    const formatDuration = (seconds) => {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      return `${hours}h ${minutes}m`;
+    };
+
+    const redirectToManageLessons = (courseId) => {
+          window.location.href = `/manage-lessons.html?courseId=${courseId}`;
+    };
+
+const renderCourses = () => {
+  const coursesTableBody = document.querySelector("#coursesTable tbody");
+  coursesTableBody.innerHTML = "";
+
+  const startIndex = (currentPage - 1) * coursesPerPage;
+  const endIndex = startIndex + coursesPerPage;
+  const coursesToDisplay = allCourses.slice(startIndex, endIndex);
+
+  coursesToDisplay.forEach((course) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${course.title}</td>
+      <td>${course.description || "-"}</td>
+      <td>${course.category || "-"}</td>
+      <td>$${course.price.toFixed(2)}</td>
+      <td>${formatDuration(course.totalDuration)}</td>
+      <td>${course.hasQuiz ? "Yes" : "No"}</td>
+      <td>${new Date(course.createdAt).toLocaleDateString()}</td>
+      <td>
+        <button class="action-btn manage-lessons-btn" onclick="redirectToManageLessons('${course._id}')">Manage Lessons</button>
+        <button class="action-btn subscription-btn" onclick="redirectToManageSubscription('${course._id}')">Manage Subscription</button>
+        <button class="action-btn update-btn" onclick="openUpdateDialog('${course._id}', '${course.title}', '${course.description}', '${course.category}', ${course.price})">Update</button>
+        <button class="action-btn delete-btn" onclick="showDeleteDialog('${course._id}')">Delete</button>
+      </td>
+    `;
+    coursesTableBody.appendChild(row);
+  });
+
+  updatePaginationControls();
+};
+
+// Redirect to manage subscriptions page
+const redirectToManageSubscription = (courseId) => {
+  window.location.href = `/manage-subscriptions.html?courseId=${courseId}`;
+};
+
+    const updatePaginationControls = () => {
+      const totalPages = Math.ceil(allCourses.length / coursesPerPage);
+      document.getElementById("prevPage").disabled = currentPage === 1;
+      document.getElementById("nextPage").disabled = currentPage === totalPages;
+      document.getElementById("pageInfo").textContent = `Page ${currentPage} of ${totalPages}`;
+    };
+
+    const changePage = (direction) => {
+      currentPage += direction;
+      renderCourses();
+    };
+
+    const applyFilters = () => {
+      const titleFilter = document.getElementById("filterTitle").value.toLowerCase();
+      const descriptionFilter = document.getElementById("filterDescription").value.toLowerCase();
+      const categoryFilter = document.getElementById("filterCategory").value.toLowerCase();
+
+      if (!titleFilter && !descriptionFilter && !categoryFilter) {
+        // If filters are cleared, reset to the original courses
+        allCourses = [...originalCourses];
+      } else {
+        // Apply filters to the original courses
+        allCourses = originalCourses.filter((course) =>
+          course.title.toLowerCase().includes(titleFilter) &&
+          (course.description || "").toLowerCase().includes(descriptionFilter) &&
+          (course.category || "").toLowerCase().includes(categoryFilter)
+        );
+      }
+
+      currentPage = 1; // Reset to the first page after filtering
+      renderCourses();
+    };
+
+    // Open update dialog and pre-fill form
+    const openUpdateDialog = (id, title, description, category, price, hasQuiz) => {
+      document.getElementById("updateCourseId").value = id;
+      document.getElementById("updateCourseTitle").value = title;
+      document.getElementById("updateDescription").value = description;
+      document.getElementById("updateCategory").value = category;
+      document.getElementById("updatePrice").value = price;    
+      document.getElementById("updateCourseDialog").style.display = "flex";
+    };
+
+    // Close update dialog
+    const closeUpdateDialog = () => {
+      document.getElementById("updateCourseDialog").style.display = "none";
+    };
+
+    // Handle update form submission
+    const updateCourseForm = document.getElementById("updateCourseForm");
+    updateCourseForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const token = localStorage.getItem("adminToken");
+      const id = document.getElementById("updateCourseId").value;
+      const title = document.getElementById("updateCourseTitle").value;
+      const description = document.getElementById("updateDescription").value;
+      const category = document.getElementById("updateCategory").value;
+      const price = parseFloat(document.getElementById("updatePrice").value);
+
+      try {
+        const response = await fetch(`http://localhost:5000/api/courses/${id}`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ title, description, category, price }),
+        });
+
+        if (!response.ok) throw new Error("Failed to update course");
+
+        alert("Course updated successfully!");
+        closeUpdateDialog();
+        fetchCourses(); // Refresh course list
+      } catch (error) {
+        console.error(error.message);
+        alert("Error updating course: " + error.message);
+      }
+    });
+
+       const openAddCourseDialog = () => {
+      document.getElementById("addCourseDialog").style.display = "flex";
+    };
+
+    const closeAddCourseDialog = () => {
+      document.getElementById("addCourseDialog").style.display = "none";
+    };
+
+    document.getElementById("addCourseForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const newCourse = {
+        title: document.getElementById("addCourseTitle").value.trim(),
+        description: document.getElementById("addCourseDescription").value.trim(),
+        category: document.getElementById("addCourseCategory").value.trim(),
+        price: parseFloat(document.getElementById("addCoursePrice").value),
+      };
+
+      if (!newCourse.title || !newCourse.description || !newCourse.category || isNaN(newCourse.price)) {
+        alert("All fields are required and price must be a valid number.");
+        return;
+      }
+
+      const token = localStorage.getItem("adminToken");
+
+      try {
+        const response = await fetch("http://localhost:5000/api/courses", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newCourse),
+        });
+
+        if (response.status === 201) {
+          alert("Course added successfully!");
+          closeAddCourseDialog();
+          fetchCourses();
+        } else {
+          const errorData = await response.json();
+          alert(errorData.error || "Failed to add course.");
+        }
+      } catch (error) {
+        console.error("Error adding course:", error);
+        alert("An error occurred. Please try again.");
+      }
+    });
+
+
+
+    fetchCourses();
+  </script>
+</body>
+</html>

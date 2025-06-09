@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Dashboard</title>
+  <style>
+    /* General Styles */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #4CAF50;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    header button {
+      position: absolute;
+      left: 20px;
+      top: 20px;
+      padding: 10px 15px;
+      border: none;
+      background-color: white;
+      color: #4CAF50;
+      font-size: 14px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    header button:hover {
+      background-color: #ddd;
+    }
+
+    main {
+      margin: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    .actions-container {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .actions-container input {
+      padding: 10px;
+      width: 300px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .actions-container button {
+      padding: 10px 15px;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .actions-container button:hover {
+      background-color: #0056b3;
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      margin-top: 20px;
+    }
+
+    table th, table td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+
+    table th {
+      background-color: #f4f4f4;
+      color: #333;
+    }
+
+    .actions button {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+
+    .actions .edit {
+      background-color: #ffc107;
+      color: white;
+    }
+
+    .actions .delete {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    .actions .manage {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .actions .toggle {
+      background-color: #17a2b8;
+      color: white;
+    }
+
+    /* Dialog Styles */
+    .dialog-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .dialog {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      width: 400px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .dialog h2 {
+      margin: 0 0 20px;
+      color: #333;
+    }
+
+    .dialog label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    .dialog input, .dialog select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .dialog button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .dialog .save {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .dialog .cancel {
+      background-color: #dc3545;
+      color: white;
+      margin-left: 10px;
+    }
+
+    .dialog button:hover {
+      opacity: 0.9;
+    }
+
+.dialog.large-dialog {
+    width: 80%; /* Increase modal width */
+    max-height: 80%; /* Limit modal height */
+    overflow: hidden; /* Prevent content overflow */
+  }
+
+  .dialog.large-dialog h2 {
+    margin-bottom: 20px;
+  }
+
+  .table-container {
+    max-height: 60vh; /* Limit table height to fit within modal */
+    overflow-y: auto; /* Enable vertical scrolling */
+  }
+
+  table {
+    width: 100%; /* Use full width of the modal */
+    border-collapse: collapse;
+  }
+
+  table th, table td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: left;
+  }
+
+  table th {
+    background-color: #f4f4f4;
+    color: #333;
+    position: sticky;
+    top: 0; /* Keep header visible when scrolling */
+    z-index: 10;
+  }
+
+  .dialog button.cancel {
+    margin-top: 15px;
+    padding: 10px 15px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .dialog button.cancel:hover {
+    background-color: #c82333;
+  }
+
+
+  </style>
+</head>
+<body>
+  <header>
+    <button onclick="goBack()">Back</button>
+    <h1>Quiz Dashboard</h1>
+  </header>
+  <main>
+    <!-- Actions -->
+    <div class="actions-container">
+     <input type="text" id="quizFilter" placeholder="Filter by quiz title" oninput="filterQuizzes()">
+      <button onclick="openAddQuizDialog()">Add Quiz</button>
+    </div>
+
+    <!-- Quizzes Table -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Title</th>
+            <th>Status</th>
+            <th># of Questions</th>
+            <th>Time Limit</th>
+            <th>Pass Mark</th>
+            <th>Created At</th>
+            <th>Updated At</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="quizTableBody">
+          <!-- Quizzes will be dynamically loaded here -->
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Add/Edit Quiz Dialog -->
+  <div id="quizDialog" class="dialog-overlay" style="display: none;">
+    <div class="dialog">
+      <h2 id="dialogTitle">Add Quiz</h2>
+      <label for="quizTitle">Title</label>
+      <input type="text" id="quizTitle">
+      <label for="quizTimeLimit">Time Limit (seconds)</label>
+      <input type="number" id="quizTimeLimit">
+      <label for="quizPassMark">Pass Mark (%)</label>
+      <input type="number" id="quizPassMark">
+      <label for="quizStatus">Status</label>
+      <select id="quizStatus">
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </select>
+      <button class="save" id="saveQuizButton" onclick="saveQuiz()">Save</button>
+      <button class="cancel" onclick="closeQuizDialog()">Cancel</button>
+    </div>
+  </div>
+
+<!-- Registered Users Modal -->
+<div id="registeredUsersModal" class="dialog-overlay" style="display: none;">
+  <div class="dialog large-dialog">
+    <h2>Registered Users</h2>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Credits Remaining</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="registeredUsersTableBody">
+          <!-- Registered users will be dynamically loaded here -->
+        </tbody>
+      </table>
+    </div>
+    <button class="cancel" onclick="closeRegisteredUsersModal()">Close</button>
+  </div>
+</div>
+
+  <script>
+    let quizzes = [];
+    let filteredQuizzes = [];
+    let currentQuizId = null;
+    let isEditing = false;
+
+    // Fetch quizzes from API
+    async function fetchQuizzes() {
+      try {
+        const response = await fetch('/api/quizzes'); // Replace with your actual API endpoint
+        if (!response.ok) {
+          throw new Error('Failed to fetch quizzes');
+        }
+        quizzes = await response.json();
+        filteredQuizzes = [...quizzes]; // Initialize filtered quizzes
+        renderQuizzes();
+      } catch (error) {
+        console.error(error);
+        alert('An error occurred while fetching quizzes.');
+      }
+    }
+
+    // Render quizzes
+function renderQuizzes() {
+  const tableBody = document.getElementById("quizTableBody");
+  tableBody.innerHTML = "";
+
+  filteredQuizzes.forEach((quiz, index) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${index + 1}</td>
+      <td>${quiz.title}</td>
+      <td>${quiz.status}</td>
+      <td>${quiz.questions.length}</td>
+      <td>${quiz.timeLimit} seconds</td>
+      <td>${quiz.passMark}%</td>
+      <td>${new Date(quiz.createdAt).toLocaleString()}</td>
+      <td>${new Date(quiz.updatedAt).toLocaleString()}</td>
+      <td class="actions">
+        <button class="manage" onclick="manageQuiz('${quiz._id}')">Manage Quiz</button>
+        <button class="edit" onclick="openEditQuizDialog('${quiz._id}')">Edit</button>
+        <button class="toggle" onclick="toggleQuizStatus('${quiz._id}')">${quiz.status === "active" ? "Deactivate" : "Activate"}</button>
+        <button class="delete" onclick="deleteQuiz('${quiz._id}')">Delete</button>
+        <button class="delete" onclick="forceDeleteQuiz('${quiz._id}')">Force Delete</button>
+        <button class="view-users" onclick="viewRegisteredUsers('${quiz._id}')">View Users</button>
+      </td>
+    `;
+    tableBody.appendChild(row);
+  });
+}
+
+    // Add or edit quiz
+    function openAddQuizDialog() {
+      isEditing = false;
+      currentQuizId = null;
+      document.getElementById("dialogTitle").textContent = "Add Quiz";
+      document.getElementById("quizTitle").value = "";
+      document.getElementById("quizTimeLimit").value = "";
+      document.getElementById("quizPassMark").value = "";
+      document.getElementById("quizStatus").value = "active";
+      document.getElementById("quizDialog").style.display = "flex";
+    }
+
+    function openEditQuizDialog(quizId) {
+      isEditing = true;
+      currentQuizId = quizId;
+      const quiz = quizzes.find(q => q._id === quizId);
+      document.getElementById("dialogTitle").textContent = "Edit Quiz";
+      document.getElementById("quizTitle").value = quiz.title;
+      document.getElementById("quizTimeLimit").value = quiz.timeLimit;
+      document.getElementById("quizPassMark").value = quiz.passMark;
+      document.getElementById("quizStatus").value = quiz.status;
+      document.getElementById("quizDialog").style.display = "flex";
+    }
+
+    function closeQuizDialog() {
+      document.getElementById("quizDialog").style.display = "none";
+    }
+
+async function saveQuiz() {
+  const title = document.getElementById("quizTitle").value.trim();
+  const timeLimit = parseInt(document.getElementById("quizTimeLimit").value, 10);
+  const passMark = parseInt(document.getElementById("quizPassMark").value, 10);
+  const status = document.getElementById("quizStatus").value;
+
+  if (!title || isNaN(timeLimit) || isNaN(passMark)) {
+    alert("All fields are required, and time limit and pass mark must be valid numbers.");
+    return;
+  }
+
+  try {
+    if (isEditing) {
+      // Editing an existing quiz
+      const response = await fetch(`/api/quizzes/${currentQuizId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ title, timeLimit, passMark, status }),
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        alert(result.error || "Failed to update quiz.");
+        return;
+      }
+
+      alert("Quiz updated successfully.");
+    } else {
+      // Adding a new quiz
+      const response = await fetch("/api/quizzes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ title, timeLimit, passMark, status }),
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        alert(result.error || "Failed to add quiz.");
+        return;
+      }
+
+      alert("Quiz added successfully.");
+    }
+
+    closeQuizDialog();
+    fetchQuizzes(); // Refresh the quizzes table
+  } catch (error) {
+    console.error("Error saving quiz:", error);
+    alert("An error occurred while saving the quiz.");
+  }
+}
+
+
+    // Toggle quiz status
+    function toggleQuizStatus(quizId) {
+      const quiz = quizzes.find(q => q._id === quizId);
+      quiz.status = quiz.status === "active" ? "inactive" : "active";
+      quiz.updatedAt = new Date();
+      renderQuizzes();
+    }
+
+    // Delete quiz
+    async function deleteQuiz(quizId) {
+      if (!confirm("Are you sure you want to delete this quiz?")) return;
+
+      try {
+        const response = await fetch(`/api/quizzes/${quizId}`, {
+          method: "DELETE",
+        });
+
+        const result = await response.json(); // Parse the response
+
+        if (!response.ok) {
+          alert(result.error || "Failed to delete quiz.");
+          return;
+        }
+
+        alert("Quiz deleted successfully.");
+        fetchQuizzes(); // Refresh the quizzes table
+      } catch (error) {
+        console.error("Error deleting quiz:", error);
+        alert("An error occurred while deleting the quiz.");
+      }
+    }
+
+    function filterQuizzes() {
+        const filterValue = document.getElementById("quizFilter").value.toLowerCase().trim(); // Get the input value
+        console.log("Filter Value:", filterValue);
+
+        // Filter the quizzes based on the title
+        filteredQuizzes = quizzes.filter(quiz =>
+            quiz.title.toLowerCase().includes(filterValue)
+        );
+
+        console.log("Filtered Quizzes:", filteredQuizzes);
+
+        renderQuizzes(); // Re-render the table with filtered quizzes
+    }
+
+    // Redirect to manage quiz page
+    function manageQuiz(quizId) {
+      window.location.href = `/manage-quiz.html?id=${quizId}`;
+    }
+
+    function goBack() {
+         window.location.href = "index.html"; // Redirect to index.html
+    }
+
+// Show Registered Users Modal
+async function viewRegisteredUsers(quizId) {
+  console.log("Fetching registered users for quizId:", quizId); // Debugging log
+
+  try {
+    const response = await fetch(`/api/registrations/quiz/${quizId}/users`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch registered users.");
+    }
+
+    const registeredUsers = await response.json(); // Parse the response
+    console.log("Registered Users API Response:", registeredUsers);
+
+    const tableBody = document.getElementById("registeredUsersTableBody");
+    tableBody.innerHTML = "";
+
+    // Check if there are no registered users
+    if (registeredUsers.length === 0) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center;">No users registered for this quiz.</td>
+        </tr>
+      `;
+      document.getElementById("registeredUsersModal").style.display = "flex";
+      return;
+    }
+
+    // Populate the table with registered users
+    registeredUsers.forEach((user, index) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${index + 1}</td>
+        <td>${user.username}</td>
+        <td>${user.email}</td>
+        <td>${user.isActive ? "Active" : "Inactive"}</td>
+        <td>${user.creditPoints}</td>
+        <td>
+          <button class="delete" onclick="removeRegistration('${user._id}', '${quizId}')">Remove</button>
+        </td>
+      `;
+      tableBody.appendChild(row);
+    });
+
+    document.getElementById("registeredUsersModal").style.display = "flex";
+  } catch (error) {
+    console.error("Error fetching registered users:", error);
+    alert("An error occurred while fetching registered users.");
+  }
+}
+
+async function removeRegistration(userId, quizId) {
+  console.log("Removing registration for:", { userId, quizId }); // Debugging log
+
+  if (!userId || !quizId) {
+    alert("Invalid user or quiz ID.");
+    return;
+  }
+
+  if (!confirm("Are you sure you want to remove this registration?")) return;
+
+  try {
+    const response = await fetch(`/api/registrations/quiz/${quizId}/user/${userId}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      const result = await response.json();
+      alert(result.error || "Failed to remove registration.");
+      return;
+    }
+
+    alert("Registration removed successfully.");
+    viewRegisteredUsers(quizId); // Refresh the registered users table
+  } catch (error) {
+    console.error("Error removing registration:", error);
+    alert("An unexpected error occurred while removing the registration.");
+  }
+}
+
+    // Close Registered Users Modal
+    function closeRegisteredUsersModal() {
+      document.getElementById("registeredUsersModal").style.display = "none";
+    }
+
+async function forceDeleteQuiz(quizId) {
+  if (!confirm("Are you sure you want to force delete this quiz? This will remove all registrations and associations with courses. This action cannot be undone.")) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/quizzes/${quizId}/force`, {
+      method: "DELETE",
+    });
+
+    const result = await response.json(); // Parse the response
+
+    if (!response.ok) {
+      alert(result.error || "Failed to force delete quiz.");
+      return;
+    }
+
+    alert("Quiz and all associated data deleted successfully!");
+    fetchQuizzes(); // Refresh the quizzes table
+  } catch (error) {
+    console.error("Error force deleting quiz:", error);
+    alert("An error occurred while force deleting the quiz.");
+  }
+}
+
+
+    // Fetch quizzes on load
+    window.onload = fetchQuizzes;
+  </script>
+</body>
+</html>

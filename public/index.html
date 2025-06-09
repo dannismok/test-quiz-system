@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backend Management System</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Basic styling for the card layout */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+
+    header {
+      background-color: #007bff;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2rem;
+    }
+
+    #welcome-container {
+      margin-top: 10px;
+    }
+
+    main {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    .card {
+      width: 300px;
+      height: 300px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+    }
+
+    .card button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .card button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Backend Management System</h1>
+    <div id="welcome-container">
+      <!-- Welcome message and logout button will be dynamically added here -->
+    </div>
+  </header>
+
+  <main>
+    <!-- Manage Users -->
+    <div class="card">
+      <h2>Manage Users</h2>
+      <button onclick="window.location.href='/view-users.html'">View All Users</button>
+    </div>
+
+    <!-- Manage Courses -->
+    <div class="card">
+      <h2>Manage Courses</h2>
+      <button onclick="window.location.href='/view-courses.html'">View All Courses</button>
+    </div>
+
+    <!-- Manage Questions -->
+    <div class="card">
+      <h2>Manage Questions</h2>
+      <button onclick="window.location.href='/view-questions.html'">View All Questions</button>
+    </div>
+
+    <!-- Manage Quizzes -->
+    <div class="card">
+      <h2>Manage Quizzes</h2>
+      <button onclick="window.location.href='/view-quizzes.html'">View All Quizzes</button>
+    </div>
+
+    <!-- Manage Purchases -->
+    <div class="card">
+      <h2>Manage Purchases</h2>
+      <button onclick="window.location.href='manage-purchase.html'" class="btn btn-primary">
+          View All Purchases
+      </button>
+    </div>
+  </main>
+
+  <script>
+    // Check if the admin is authenticated
+    const token = localStorage.getItem("adminToken");
+
+    if (!token) {
+      // Redirect to the login page if no token is found
+      window.location.href = "/login.html";
+    } else {
+      // Decode the token (get the payload to extract admin details)
+      const payloadBase64 = token.split(".")[1]; // Get the payload part of the JWT
+      const decodedPayload = JSON.parse(atob(payloadBase64)); // Decode Base64 payload
+      const username = decodedPayload.username; // Extract the username from the payload
+
+      // Display the welcome message and logout button
+      const welcomeContainer = document.getElementById("welcome-container");
+      welcomeContainer.innerHTML = `
+        <p>Welcome, ${username}!</p>
+        <button id="logoutButton">Logout</button>
+      `;
+
+      // Add logout functionality
+      const logoutButton = document.getElementById("logoutButton");
+      logoutButton.addEventListener("click", () => {
+        // Clear the token from localStorage
+        localStorage.removeItem("adminToken");
+
+        // Redirect to the login page
+        window.location.href = "/login.html";
+      });
+
+      // Optionally verify the token with the server
+      fetch("/api/admin/protected", {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((response) => {
+          if (!response.ok) {
+            // If the token is invalid, remove it and redirect to login
+            localStorage.removeItem("adminToken");
+            window.location.href = "/login.html";
+          }
+        })
+        .catch((error) => {
+          console.error("Error verifying token:", error);
+          localStorage.removeItem("adminToken");
+          window.location.href = "/login.html";
+        });
+    }
+  </script>
+</body>
+</html>

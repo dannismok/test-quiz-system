@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View Users with Pagination, Update, and Delete</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    header {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+    }
+    header h1 {
+      margin: 0;
+    }
+    header button {
+      float: right;
+      background-color: white;
+      border: none;
+      color: #007bff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    header button:hover {
+      background-color: #e9ecef;
+    }
+    main {
+      padding: 20px;
+    }
+    input {
+      margin-bottom: 15px;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: 100%;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: white;
+      border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    table th, table td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: left;
+    }
+    table th {
+      background-color: #007bff;
+      color: white;
+    }
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 20px;
+    }
+    .pagination button {
+      margin: 0 5px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+    .pagination button:disabled {
+      background-color: #ddd;
+      color: gray;
+      cursor: not-allowed;
+    }
+    .pagination button:hover:not(:disabled) {
+      background-color: #0056b3;
+    }
+    .dialog-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      display: none; /* Hidden by default */
+    }
+    .dialog-box {
+      background-color: white;
+      border-radius: 8px;
+      padding: 20px;
+      width: 400px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    .dialog-box h2 {
+      margin-top: 0;
+    }
+    .dialog-box button {
+      margin-top: 15px;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+    }
+    .dialog-box .close-btn {
+      background-color: #dc3545;
+      color: white;
+    }
+    .dialog-box .close-btn:hover {
+      background-color: #c82333;
+    }
+    .dialog-box .save-btn {
+      background-color: #007bff;
+      color: white;
+    }
+    .dialog-box .save-btn:hover {
+      background-color: #0056b3;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+
+ .modal {
+    display: none; /* Hidden by default */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    z-index: 1000; /* Ensure it appears above other elements */
+  }
+
+  .modal-content {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    width: 90%; /* Default width for smaller screens */
+    max-width: 500px; /* Maximum width for larger screens */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add a shadow effect */
+    animation: fadeIn 0.3s ease-in-out; /* Optional fade-in animation */
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+
+  .modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+
+  .close-btn {
+    background-color: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #aaa;
+  }
+
+  .close-btn:hover {
+    color: black;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+   /* Modal Buttons */
+  .dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px; /* Space between buttons */
+  }
+
+  .dialog-buttons button {
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+  }
+
+  /* Submit Button */
+  .submit-btn {
+    background-color: #007bff;
+    color: white;
+  }
+
+  .submit-btn:hover {
+    background-color: #0056b3;
+  }
+
+  /* Cancel Button */
+  .cancel-btn {
+    background-color: #dc3545;
+    color: white;
+  }
+
+  .cancel-btn:hover {
+    background-color: #c82333;
+  }
+
+  .enroll-btn {
+  background-color: #28a745;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.enroll-btn:hover {
+  background-color: #218838;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#courseSearch {
+  margin-bottom: 10px;
+  padding: 8px;
+  font-size: 16px;
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+#course {
+  margin-bottom: 10px;
+  padding: 8px;
+  font-size: 16px;
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+  </style>
+</head>
+<body>
+  <header>
+    <h1>View All Users</h1>
+    <button class="add-user-btn" onclick="openAddUserModal()">Add User</button>
+    <button onclick="window.location.href='/index.html'">Back to Dashboard</button>
+  </header>
+  <main>
+    <!-- Filters -->
+    <div>
+      <input type="text" id="filterName" placeholder="Filter by Name" oninput="applyFilters()">
+      <input type="text" id="filterEmail" placeholder="Filter by Email" oninput="applyFilters()">
+      <input type="text" id="filterPhone" placeholder="Filter by Phone" oninput="applyFilters()">
+    </div>
+
+    <!-- Users Table -->
+    <table id="usersTable">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Google User</th>
+          <th>Total Credits</th>
+          <th>Active</th>
+          <th>Created At</th>
+          <th>Actions</th>
+          <th>Enroll</th> <!-- New column for the button -->
+        </tr>
+      </thead>
+      <tbody>
+        <!-- User rows will be dynamically added here -->
+      </tbody>
+    </table>
+
+    <!-- Pagination Controls -->
+    <div class="pagination">
+      <button id="prevPage" onclick="changePage(-1)" disabled>Previous</button>
+      <span id="pageInfo">Page 1</span>
+      <button id="nextPage" onclick="changePage(1)" disabled>Next</button>
+    </div>
+  </main>
+
+  <!-- Add User Modal -->
+<div id="addUserModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Add New User</h2>
+      <button class="close-btn" onclick="closeAddUserModal()">×</button>
+    </div>
+    <form id="addUserForm">
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" placeholder="Enter username" required>
+
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" placeholder="Enter email" required>
+
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" placeholder="Enter password" required>
+
+      <div class="dialog-buttons">
+        <button type="submit" class="submit-btn">Add User</button>
+        <button type="button" class="cancel-btn" onclick="closeAddUserModal()">Cancel</button>
+      </div>
+
+      <div id="statusMessage" class="error" style="display: none;"></div>
+    </form>
+  </div>
+</div>
+
+  <!-- Update User Dialog -->
+  <div class="dialog-overlay" id="updateUserDialog">
+    <div class="dialog-box">
+      <h2>Update User</h2>
+      <form id="updateUserForm">
+        <input type="hidden" id="updateUserId"> <!-- Hidden input for user ID -->
+        <label for="updateUsername">Username</label>
+        <input type="text" id="updateUsername" required>
+        <label for="updateEmail">Email</label>
+        <input type="email" id="updateEmail" required>
+        <label for="updatePhone">Phone</label>
+        <input type="text" id="updatePhone">
+        </select>
+        <button type="submit" class="save-btn">Save Changes</button>
+        <button type="button" class="close-btn" onclick="closeUpdateDialog()">Cancel</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Dialog -->
+  <div class="dialog-overlay" id="deleteConfirmationDialog">
+    <div class="dialog-box">
+      <h2>Confirm Delete</h2>
+      <p>Are you sure you want to delete this user?</p>
+      <button id="confirmDeleteBtn" class="save-btn">Yes, Delete</button>
+      <button class="close-btn" onclick="closeDeleteDialog()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Reset Password Modal -->
+  <div id="resetPasswordModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Reset Password</h2>
+        <button class="close-btn" onclick="closeResetPasswordModal()">×</button>
+      </div>
+      <form id="resetPasswordForm">
+        <input type="hidden" id="resetUserId"> <!-- Hidden input for user ID -->
+        <label for="newPassword">New Password</label>
+        <input type="password" id="newPassword" placeholder="Enter new password" required>
+        
+        <div class="dialog-buttons">
+          <button type="submit" class="submit-btn">Reset Password</button>
+          <button type="button" class="cancel-btn" onclick="closeResetPasswordModal()">Cancel</button>
+        </div>
+        
+        <div id="resetStatusMessage" style="display: none; color: red;"></div>
+      </form>
+    </div>
+  </div>
+
+
+<!-- Enroll Course Modal -->
+<div id="enrollCourseModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Enroll in Course</h2>
+      <button class="close-btn" onclick="closeEnrollCourseModal()">×</button>
+    </div>
+    <form id="enrollCourseForm">
+      <input type="hidden" id="enrollUserId"> <!-- Hidden input for user ID -->
+
+      <!-- Search for Course -->
+      <label for="courseSearch">Search Course (by Title or Code)</label>
+      <input type="text" id="courseSearch" placeholder="Enter course title or code" oninput="searchCourses()" required>
+      
+      <label for="course">Select Course</label>
+      <select id="course" name="course" required>
+        <option value="">-- Search and Select a Course --</option>
+        <!-- Dynamically populated -->
+      </select>
+
+      <label for="amount">Amount</label>
+      <input type="number" id="amount" name="amount" placeholder="Enter amount" required>
+
+      <label for="purchaseType">Type of Purchase</label>
+      <select id="purchaseType" name="purchaseType" required>
+        <option value="">-- Select Purchase Type --</option>
+        <option value="face-to-face">Face to Face</option>
+        <option value="fps">FPS</option>
+        <option value="bank-transfer">Bank Transfer</option>
+        <option value="paypal">PayPal</option>
+        <option value="payme">PayMe</option>
+      </select>
+
+      <label for="subscriptionPeriod">Subscription Period (in days)</label>
+      <input type="number" id="subscriptionPeriod" name="subscriptionPeriod" placeholder="Enter subscription period in days" required>
+
+      <label for="totalCredits">Total Credits</label>
+      <input type="number" id="totalCredits" name="totalCredits" placeholder="Enter total credits" required>
+
+      <div class="dialog-buttons">
+        <button type="submit" class="submit-btn">Enroll</button>
+        <button type="button" class="cancel-btn" onclick="closeEnrollCourseModal()">Cancel</button>
+      </div>
+
+      <div id="enrollStatusMessage" style="display: none; color: red;"></div>
+    </form>
+  </div>
+</div>
+
+<!-- Register Quiz Modal -->
+<div id="registerQuizModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Register Quiz</h2>
+      <button class="close-btn" onclick="closeRegisterQuizDialog()">×</button>
+    </div>
+    <form id="registerQuizForm">
+      <input type="hidden" id="registerQuizUserId"> <!-- Hidden input for the user ID -->
+
+      <label for="quizSearch">Search Quiz</label>
+      <input type="text" id="quizSearch" placeholder="Search quizzes..." oninput="searchQuizzes()" required>
+      
+      <label for="quizSelect">Select Quiz</label>
+      <select id="quizSelect" required></select>
+
+      <label for="quizSubscriptionPeriod">Subscription Period (days)</label>
+      <input type="number" id="quizSubscriptionPeriod" placeholder="Enter subscription period" required>
+
+      
+      <label for="paymentAmount">Payment Amount:</label>
+      <input type="number" id="paymentAmount" placeholder="Enter payment amount" required />     
+
+      <label for="paymentMethod">Payment Method</label>
+      <select id="paymentMethod" required>
+        <option value="">-- Select Purchase Type --</option>
+        <option value="face-to-face">Face to Face</option>
+        <option value="fps">FPS</option>
+        <option value="bank-transfer">Bank Transfer</option>
+        <option value="paypal">PayPal</option>
+        <option value="payme">PayMe</option>
+      </select>
+
+      <label for="creditPoints">Credits</label>
+      <input type="number" id="creditPoints" placeholder="Enter credits for the quiz" required>
+
+      <div class="dialog-buttons">
+        <button type="submit" class="submit-btn">Register</button>
+        <button type="button" class="cancel-btn" onclick="closeRegisterQuizDialog()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+  <script>
+    let originalUsers = []; // Holds the unfiltered user data
+    let allUsers = []; // Holds all users for filtering and pagination
+    let currentPage = 1; // Current page number
+    const usersPerPage = 10; // Number of users per page
+    let userIdToDelete = null; // Temporarily holds the user ID to delete
+
+const API_BASE_URL = "http://localhost:5000/api/user";
+
+const fetchUsers = async () => {
+  try {
+    const token = localStorage.getItem("adminToken"); // Retrieve the admin token from localStorage
+
+    if (!token) {
+      alert("You are not authorized. Please log in as an admin.");
+      return;
+    }
+
+    const response = await fetch(API_BASE_URL, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`, // Include the token in the Authorization header
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.status === 403) {
+      alert("Access denied. You do not have permission to view users.");
+      return;
+    }
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch users.");
+    }
+
+    const users = await response.json();
+    originalUsers = [...users]; // Store original data for filtering
+    allUsers = [...users]; // Store for filtering and pagination
+    renderUsers(); // Render the users in the table
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    alert("An error occurred while fetching users.");
+  }
+};
+
+
+const renderUsers = () => {
+  const usersTableBody = document.querySelector("#usersTable tbody");
+  usersTableBody.innerHTML = ""; // Clear existing rows
+
+  // Sort users by 'createdAt' in descending order
+  const sortedUsers = [...allUsers].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const startIndex = (currentPage - 1) * usersPerPage;
+  const endIndex = Math.min(startIndex + usersPerPage, sortedUsers.length);
+  const usersToDisplay = sortedUsers.slice(startIndex, endIndex);
+
+  if (usersToDisplay.length === 0) {
+    usersTableBody.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align: center;">No users found</td>
+      </tr>
+    `;
+    return;
+  }
+
+  usersToDisplay.forEach((user) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${user.username}</td>
+      <td>${user.email}</td>
+      <td>${user.phone || "-"}</td>
+      <td>${user.isGoogleUser ? "Yes" : "No"}</td> <!-- Google User -->
+      <td>${user.totalCredits || 0}</td> <!-- Total Credits -->
+      <td>${user.active ? "Active" : "Inactive"}</td> <!-- Active Status -->
+      <td>${new Date(user.createdAt).toLocaleDateString()}</td>
+      <td>
+        <button class="update-btn" onclick="openUpdateDialog('${user._id}', '${user.username}', '${user.email}', '${user.phone || ""}')">Update</button>
+        <button class="delete-btn" onclick="showDeleteDialog('${user._id}')">Delete</button>
+        <button class="force-delete-btn" onclick="forceDeleteUser('${user._id}')">Force Delete</button>
+        <button class="action-btn" onclick="manageSubscriptions('${user._id}')">Manage Subscriptions</button>
+        <button class="action-btn" onclick="manageRegistrations('${user._id}')">Manage Registrations</button>
+        <button class="toggle-active-btn" onclick="toggleUserActive('${user._id}', ${user.active})">
+          ${user.active ? "Deactivate" : "Activate"}
+        </button>
+        <button class="reset-password-btn" onclick="openResetPasswordDialog('${user._id}', '${user.username}')">Reset Password</button>
+        
+      </td>
+      <td>
+        <button class="enroll-btn" onclick="openEnrollCourseModal('${user._id}')">Enroll Course</button>
+        <button class="register-quiz-btn" onclick="openRegisterQuizDialog('${user._id}')">Register Quiz</button>
+      </td>
+    `;
+    usersTableBody.appendChild(row);
+  });
+
+  updatePaginationControls();
+};
+
+
+    // Update pagination controls
+    const updatePaginationControls = () => {
+      const totalPages = Math.ceil(allUsers.length / usersPerPage);
+      document.getElementById("prevPage").disabled = currentPage === 1;
+      document.getElementById("nextPage").disabled = currentPage === totalPages;
+      document.getElementById("pageInfo").textContent = `Page ${currentPage} of ${totalPages}`;
+    };
+
+
+    // Apply filters to the users
+    const applyFilters = () => {
+        const nameFilter = document.getElementById("filterName").value.toLowerCase();
+        const emailFilter = document.getElementById("filterEmail").value.toLowerCase();
+        const phoneFilter = document.getElementById("filterPhone").value.toLowerCase();
+
+        // Reset to original users if filters are cleared
+        if (!nameFilter && !emailFilter && !phoneFilter) {
+        allUsers = [...originalUsers];
+        } else {
+        // Apply filters to the original users
+        allUsers = originalUsers.filter((user) => {
+            return (
+            user.username.toLowerCase().includes(nameFilter) &&
+            user.email.toLowerCase().includes(emailFilter) &&
+            (user.phone || "").toLowerCase().includes(phoneFilter)
+            );
+        });
+        }
+
+        currentPage = 1; // Reset to the first page after filtering
+        renderUsers();
+    };
+
+
+    // Change the current page
+    const changePage = (direction) => {
+      currentPage += direction;
+      renderUsers();
+    };
+
+    // Open update dialog and pre-fill form
+    const openUpdateDialog = (id, username, email, phone, role) => {
+      document.getElementById("updateUserId").value = id;
+      document.getElementById("updateUsername").value = username;
+      document.getElementById("updateEmail").value = email;
+      document.getElementById("updatePhone").value = phone;
+      document.getElementById("updateUserDialog").style.display = "flex";
+    };
+
+    // Close update dialog
+    const closeUpdateDialog = () => {
+      document.getElementById("updateUserDialog").style.display = "none";
+    };
+
+    // Handle update form submission
+    const updateUserForm = document.getElementById("updateUserForm");
+    updateUserForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const token = localStorage.getItem("adminToken");
+      const id = document.getElementById("updateUserId").value;
+      const username = document.getElementById("updateUsername").value;
+      const email = document.getElementById("updateEmail").value;
+      const phone = document.getElementById("updatePhone").value;
+
+
+      try {
+        const response = await fetch(`http://localhost:5000/api/user/${id}`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ username, email, phone }),
+        });
+
+        if (!response.ok) throw new Error("Failed to update user");
+
+        alert("User updated successfully!");
+        closeUpdateDialog();
+        fetchUsers(); // Refresh user list
+      } catch (error) {
+        console.error(error.message);
+        alert("Error updating user: " + error.message);
+      }
+    });
+
+const showDeleteDialog = (userId) => {
+  userIdToDelete = userId; // Store user ID to delete
+  document.getElementById("deleteConfirmationDialog").style.display = "flex";
+};
+
+const closeDeleteDialog = () => {
+  userIdToDelete = null; // Clear user ID
+  document.getElementById("deleteConfirmationDialog").style.display = "none";
+};
+
+document.getElementById("confirmDeleteBtn").addEventListener("click", async () => {
+  if (!userIdToDelete) return;
+
+  const token = localStorage.getItem("adminToken");
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/${userIdToDelete}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const result = await response.json(); // Parse the response
+
+    if (!response.ok) {
+      alert(result.message || "Failed to delete user."); // Display backend error message
+      return;
+    }
+
+    alert("User deleted successfully!");
+    closeDeleteDialog();
+    fetchUsers(); // Refresh the user list
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    alert("An error occurred while deleting the user.");
+  }
+});
+
+
+ // Open and close the Add User modal
+    function openAddUserModal() {
+      document.getElementById("addUserModal").style.display = "flex";
+    }
+
+    function closeAddUserModal() {
+      document.getElementById("addUserModal").style.display = "none";
+    }
+
+const enrollInCourse = async (userId) => {
+  const token = localStorage.getItem("adminToken"); // Retrieve the admin token
+
+  if (!token) {
+    alert("Unauthorized. Please log in as an admin.");
+    return;
+  }
+
+  if (!confirm("Are you sure you want to enroll this user in a course?")) {
+    return;
+  }
+
+  try {
+    // Make an API request to enroll the user in a course
+    const response = await fetch(`http://localhost:5000/api/user/${userId}/enroll-course`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`, // Attach the token
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ courseId: "default-course-id" }), // Replace with actual course ID
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to enroll user in the course.");
+    }
+
+    const result = await response.json();
+    alert(`User enrolled successfully in the course: ${result.courseName}`);
+  } catch (error) {
+    console.error("Error enrolling user in the course:", error);
+    alert("An error occurred while enrolling the user. Please try again.");
+  }
+};
+
+
+const addUserForm = document.getElementById("addUserForm");
+const statusMessage = document.getElementById("statusMessage");
+
+addUserForm.addEventListener("submit", async (e) => {
+  e.preventDefault(); // Prevent form from refreshing the page
+
+  const token = localStorage.getItem("adminToken"); // Retrieve the admin token from localStorage
+
+  if (!token) {
+    statusMessage.style.display = "block";
+    statusMessage.textContent = "Unauthorized. Please log in as an admin.";
+    return;
+  }
+
+  // Collect form data
+  const formData = {
+    username: document.getElementById("username").value,
+    email: document.getElementById("email").value,
+    password: document.getElementById("password").value,
+  };
+
+  try {
+    // Make a POST request to the backend to add the user
+    const response = await fetch(API_BASE_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`, // Attach the token in the Authorization header
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData), // Send the form data as JSON
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to add user");
+    }
+
+    // Success message
+    statusMessage.style.display = "block";
+    statusMessage.className = "success"; // Change the class to success
+    statusMessage.textContent = "User added successfully!";
+
+    // Clear the form
+    addUserForm.reset();
+
+    // Close the modal after success
+    closeAddUserModal();
+
+    // Refetch the users from the server to refresh the table
+    await fetchUsers(); // This function will refetch the users and re-render the table
+  } catch (error) {
+    console.error("Error adding user:", error);
+
+    // Error message
+    statusMessage.style.display = "block";
+    statusMessage.className = "error"; // Change the class to error
+    statusMessage.textContent = `Error: ${error.message}`;
+  }
+});
+
+    // Redirect to the Manage Subscription page
+    const manageSubscriptions = (userId) => {
+      window.location.href = `manage-subscriptions-for-user.html?userId=${userId}`;
+    };
+
+    const manageRegistrations = (userId) => {
+      window.location.href = `manage-registrations-for-user.html?userId=${userId}`;
+    };
+
+    const forceDeleteUser = async (userId) => {
+      if (!confirm("Are you sure you want to force delete this user? This action cannot be undone.")) {
+        return;
+      }
+
+      const token = localStorage.getItem("adminToken");
+
+      try {
+        const response = await fetch(`http://localhost:5000/api/user/${userId}/force`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        const result = await response.json(); // Parse the response
+
+        if (!response.ok) {
+          alert(result.message || "Failed to force delete user."); // Display backend error message
+          return;
+        }
+
+        alert("User and all associated data deleted successfully!");
+        fetchUsers(); // Refresh the user list
+      } catch (error) {
+        console.error("Error force deleting user:", error);
+        alert("An error occurred while force deleting the user.");
+      }
+    };
+
+    // Open Reset Password Dialog
+    const openResetPasswordDialog = (userId, username) => {
+      document.getElementById("resetUserId").value = userId; // Store user ID
+      document.getElementById("resetPasswordModal").style.display = "flex";
+    };
+
+    // Close Reset Password Dialog
+    const closeResetPasswordModal = () => {
+      document.getElementById("resetUserId").value = ""; // Clear user ID
+      document.getElementById("resetPasswordModal").style.display = "none";
+    };
+
+const toggleUserActive = async (userId, isActive) => {
+  const token = localStorage.getItem("adminToken");
+
+  if (!confirm(`Are you sure you want to ${isActive ? "deactivate" : "activate"} this user?`)) {
+    return;
+  }
+
+  try {
+    // Send PATCH request to toggle user active status
+    const response = await fetch(`http://localhost:5000/api/user/${userId}/toggle-active`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to toggle user active status.");
+    }
+
+    const result = await response.json();
+    alert(`User ${result.active ? "activated" : "deactivated"} successfully.`);
+
+    // Re-fetch the user list and re-render the table
+    await fetchUsers();
+  } catch (error) {
+    console.error("Error toggling user active status:", error);
+    alert("An error occurred while toggling user status. Please try again.");
+  }
+};
+
+const resetPasswordForm = document.getElementById("resetPasswordForm");
+
+resetPasswordForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const token = localStorage.getItem("adminToken");
+  const userId = document.getElementById("resetUserId").value;
+  const newPassword = document.getElementById("newPassword").value;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/${userId}/reset-password`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ password: newPassword }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Failed to reset password.");
+    }
+
+    alert("Password reset successfully!");
+    closeResetPasswordModal(); // Close the modal
+  } catch (error) {
+    console.error("Error resetting password:", error);
+    const statusMessage = document.getElementById("resetStatusMessage");
+    statusMessage.style.display = "block";
+    statusMessage.textContent = error.message;
+  }
+});
+
+// Open the Enroll Course Modal
+const openEnrollCourseModal = (userId) => {
+  document.getElementById("enrollUserId").value = userId; // Store the user ID
+  document.getElementById("enrollCourseModal").style.display = "flex";
+
+  // Dynamically populate the course list (fetch from backend)
+  // fetchCourses();
+};
+
+// Close the Enroll Course Modal
+const closeEnrollCourseModal = () => {
+  document.getElementById("enrollUserId").value = ""; // Clear the user ID
+  document.getElementById("enrollCourseModal").style.display = "none";
+  document.getElementById("enrollCourseForm").reset(); // Reset the form
+};
+
+const searchCourses = async () => {
+  const searchKeyword = document.getElementById("courseSearch").value.trim();
+
+  if (!searchKeyword) {
+    document.getElementById("course").innerHTML = `<option value="">-- Search and Select a Course --</option>`;
+    return;
+  }
+
+  try {
+    const response = await fetch(`http://localhost:5000/api/courses?search=${searchKeyword}`); // Replace with your backend endpoint
+    if (!response.ok) {
+      throw new Error("Failed to fetch courses.");
+    }
+
+    const courses = await response.json();
+    const courseDropdown = document.getElementById("course");
+
+    // Clear existing options
+    courseDropdown.innerHTML = `<option value="">-- Select a Course --</option>`;
+
+    // Populate the dropdown with course options
+    courses.forEach((course) => {
+      const option = document.createElement("option");
+      option.value = course._id;
+      option.textContent = `${course.title} (${course.code})`;
+      courseDropdown.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Error fetching courses:", error);
+    alert("An error occurred while fetching courses.");
+  }
+};
+
+const enrollCourseForm = document.getElementById("enrollCourseForm");
+console.log("Form Element:", enrollCourseForm);
+
+enrollCourseForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+   console.log("Enroll form submitted"); // Debug log
+
+  const token = localStorage.getItem("adminToken");
+  const userId = document.getElementById("enrollUserId").value;
+  const courseId = document.getElementById("course").value;
+  const amount = document.getElementById("amount").value;
+  const purchaseType = document.getElementById("purchaseType").value;
+  const subscriptionPeriod = document.getElementById("subscriptionPeriod").value; // In days
+  const totalCredits = document.getElementById("totalCredits").value;
+
+  try {
+    const response = await fetch(`http://localhost:5000/api/user/${userId}/enroll-course`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        courseId,
+        amount,
+        purchaseType,
+        subscriptionPeriod, // Send in days
+        totalCredits,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to enroll user in the course.");
+    }
+
+    const result = await response.json();
+    alert(`User enrolled successfully in the course: ${result.courseName}`);
+    closeEnrollCourseModal();
+    fetchUsers(); // Refresh users table
+  } catch (error) {
+    console.error("Error enrolling user:", error);
+    const statusMessage = document.getElementById("enrollStatusMessage");
+    statusMessage.style.display = "block";
+    statusMessage.textContent = `Error: ${error.message}`;
+  }
+});
+
+const openRegisterQuizDialog = (userId) => {
+  document.getElementById("registerQuizUserId").value = userId; // Set the user ID
+  document.getElementById("registerQuizModal").style.display = "flex"; // Show the modal
+};
+
+const closeRegisterQuizDialog = () => {
+  document.getElementById("registerQuizModal").style.display = "none"; // Hide the modal
+  document.getElementById("registerQuizForm").reset(); // Reset the form
+};
+
+const searchQuizzes = async () => {
+  const searchQuery = document.getElementById("quizSearch").value;
+
+  try {
+    const response = await fetch(`http://localhost:5000/api/quizzes?search=${searchQuery}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const quizzes = await response.json();
+    const quizSelect = document.getElementById("quizSelect");
+
+    quizSelect.innerHTML = ""; // Clear existing options
+    quizzes.forEach((quiz) => {
+      const option = document.createElement("option");
+      option.value = quiz._id;
+      option.textContent = quiz.title;
+      quizSelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Error searching quizzes:", error);
+    alert("An error occurred while searching for quizzes.");
+  }
+};
+
+const registerQuizForm = document.getElementById("registerQuizForm");
+
+registerQuizForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  // Retrieve values from the form fields
+  const userId = document.getElementById("registerQuizUserId").value;
+  const quizId = document.getElementById("quizSelect").value;
+  const subscriptionPeriod = parseInt(document.getElementById("quizSubscriptionPeriod").value, 10); // Updated ID
+  const paymentMethod = document.getElementById("paymentMethod").value;
+  const creditPoints = parseInt(document.getElementById("creditPoints").value, 10);
+  const amount = parseFloat(document.getElementById("paymentAmount").value); // Updated ID
+
+  // Validate all fields
+  if (!userId) {
+    alert("User ID is missing.");
+    return;
+  }
+  if (!quizId) {
+    alert("Please select a quiz.");
+    return;
+  }
+  if (!subscriptionPeriod || isNaN(subscriptionPeriod) || subscriptionPeriod <= 0) {
+    alert("Please enter a valid subscription period (in days).");
+    return;
+  }
+  if (!amount || isNaN(amount) || amount <= 0) {
+    alert("Please enter a valid payment amount.");
+    return;
+  }
+  if (!creditPoints || isNaN(creditPoints) || creditPoints <= 0) {
+    alert("Please enter a valid number of credits.");
+    return;
+  }
+  if (!paymentMethod) {
+    alert("Please select a payment method.");
+    return;
+  }
+
+  try {
+    // Send the API request
+    const response = await fetch(`http://localhost:5000/api/user/${userId}/register-quiz`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        quizId,
+        amount, // Use the updated field
+        purchaseType: paymentMethod,
+        subscriptionPeriod, // Use the updated field
+        totalCredits: creditPoints,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Failed to register quiz.");
+    }
+
+    alert("Quiz registered successfully!");
+    closeRegisterQuizDialog(); // Close the modal
+  } catch (error) {
+    console.error("Error registering quiz:", error);
+    alert(`An error occurred: ${error.message}`);
+  }
+});
+    // Fetch users on page load
+    fetchUsers();
+  </script>
+</body>
+</html>

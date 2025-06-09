@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add User</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    header {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+    }
+    header h1 {
+      margin: 0;
+    }
+    header button {
+      float: right;
+      background-color: white;
+      border: none;
+      color: #007bff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    header button:hover {
+      background-color: #e9ecef;
+    }
+    main {
+      padding: 20px;
+      max-width: 500px;
+      margin: 0 auto;
+      background-color: white;
+      border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, select, button {
+      margin-bottom: 15px;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    .success {
+      color: green;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Add New User</h1>
+    <button onclick="window.location.href='/index.html'">Back to Dashboard</button>
+  </header>
+  <main>
+    <form id="addUserForm">
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" placeholder="Enter username" required>
+
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" placeholder="Enter email" required>
+
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" placeholder="Enter password" required>
+
+      <label for="role">Role</label>
+      <select id="role" name="role" required>
+        <option value="user">User</option>
+        <option value="admin">Admin</option>
+      </select>
+
+      <button type="submit">Add User</button>
+
+      <div id="statusMessage" class="error" style="display: none;"></div>
+    </form>
+  </main>
+
+  <script>
+    // Handle form submission
+    const addUserForm = document.getElementById("addUserForm");
+    const statusMessage = document.getElementById("statusMessage");
+
+    addUserForm.addEventListener("submit", async (e) => {
+      e.preventDefault(); // Prevent form from refreshing the page
+
+      const token = localStorage.getItem("adminToken"); // Retrieve the admin token from localStorage
+
+      if (!token) {
+        statusMessage.style.display = "block";
+        statusMessage.textContent = "Unauthorized. Please log in as an admin.";
+        return;
+      }
+
+      // Collect form data
+      const formData = {
+        username: document.getElementById("username").value,
+        email: document.getElementById("email").value,
+        password: document.getElementById("password").value,
+        role: document.getElementById("role").value,
+      };
+
+      try {
+        // Make a POST request to the backend to add the user
+        const response = await fetch("http://localhost:5000/api/user/users", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`, // Attach the token in the Authorization header
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData), // Send the form data as JSON
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || "Failed to add user");
+        }
+
+        // Success message
+        statusMessage.style.display = "block";
+        statusMessage.className = "success"; // Change the class to success
+        statusMessage.textContent = "User added successfully!";
+
+        // Clear the form
+        addUserForm.reset();
+      } catch (error) {
+        console.error("Error adding user:", error);
+
+        // Error message
+        statusMessage.style.display = "block";
+        statusMessage.className = "error"; // Change the class to error
+        statusMessage.textContent = `Error: ${error.message}`;
+      }
+    });
+  </script>
+</body>
+</html>

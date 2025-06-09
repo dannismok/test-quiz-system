@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Quiz</title>
+    <style>
+       body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #007bff;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .quiz-details {
+            margin-bottom: 20px;
+        }
+
+        .quiz-details h2 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .quiz-details p {
+            margin: 5px 0;
+        }
+
+        .filters {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .filters select,
+        .filters input {
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        table th, table td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        table th {
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        .actions button {
+            padding: 5px 10px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+
+        .actions .remove {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .actions .add {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 400px;
+            padding: 20px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .dialog h3 {
+            margin: 0 0 10px;
+        }
+
+        .dialog input {
+            padding: 8px;
+            width: calc(100% - 16px);
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .dialog button {
+            padding: 8px 10px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .dialog .close {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .dialog .search {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+
+        .dialog {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        width: 80%; /* Increase the width of the dialog */
+        max-height: 90%; /* Ensure it doesn't exceed the viewport height */
+        padding: 20px;
+        z-index: 1000;
+        overflow: auto; /* Add scroll if content overflows */
+    }
+
+    .dialog h3 {
+        margin: 0 0 10px;
+    }
+
+    .dialog input {
+        padding: 8px;
+        width: calc(100% - 16px); /* Full width minus padding */
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .dialog button {
+        padding: 8px 10px;
+        font-size: 14px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .dialog .close {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .dialog .search {
+        background-color: #007bff;
+        color: white;
+    }
+
+    /* Table Styles */
+    #searchResultsTable {
+        width: 100%; /* Ensure the table fits within the dialog */
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    #searchResultsTable th,
+    #searchResultsTable td {
+        padding: 12px;
+        border: 1px solid #ddd;
+        text-align: left; /* Align text to the left */
+    }
+
+    #searchResultsTable th {
+        background-color: #f4f4f4;
+        color: #333;
+    }
+
+    /* Add a grab cursor for draggable rows */
+    tr[draggable="true"] {
+        cursor: grab;
+    }
+
+    tr[draggable="true"]:active {
+        cursor: grabbing;
+    }
+
+    /* Highlight the row being dragged over */
+    tr.drag-over {
+        border: 2px dashed #007bff;
+        background-color: #f0f8ff;
+    }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Manage Quiz</h1>
+        <a href="view-quizzes.html" style="color: white; text-decoration: none; font-size: 16px;">&larr; Back to Quizzes</a>
+    </header>
+
+    <div class="container">
+        <!-- Quiz Details -->
+        <div class="quiz-details" id="quizDetails">
+            <h2>Loading Quiz Details...</h2>
+            <p id="quizTime">Time Limit: Loading...</p>
+            <p id="quizPassMark">Passing Mark: Loading...</p>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters">
+            <select id="filterTag">
+                <option value="">Filter by Tag</option>
+            </select>
+            <select id="filterType">
+                <option value="">Filter by Type</option>
+            </select>
+            <input type="text" id="filterQuestion" placeholder="Filter by Question">
+            
+            <button class="add" onclick="openAddQuestionDialog()">Select Question to Add</button>
+            <button onclick="saveQuestionOrder()">Save Order</button>
+        </div>
+
+        <div class="pagination-controls">
+            <label for="pageSize">Questions per page:</label>
+            <select id="pageSize" onchange="updatePageSize()">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="all">All</option>
+            </select>
+        </div>
+
+       <!-- Questions Table -->
+      <div id="loading" class="loading">Loading questions...</div>
+       <table id="questionsTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Question</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Tags</th>
+                    <th>Explanation</th>
+                    <th>Vimeo ID</th>
+                    <th>Created Date</th>
+                    <th>Updated Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="questionsBody"></tbody>
+        </table>
+
+        <!-- Pagination Controls -->
+        <div class="pagination" id="pagination" style="display: none; text-align: center; margin-top: 20px;">
+            <button id="prevPage" onclick="goToPrevPage()" disabled>Previous</button>
+            <span id="pageInfo">Page 1</span>
+            <button id="nextPage" onclick="goToNextPage()">Next</button>
+        </div>
+    </div>
+
+
+
+    <!-- Add Question Dialog -->
+    <div class="overlay" id="overlay"></div>
+    <div class="dialog" id="addQuestionDialog">
+        <h3>Search Questions to Add</h3>
+
+        <!-- Search Inputs -->
+        <input type="text" id="searchTitle" placeholder="Search by Title">
+        <input type="text" id="searchTag" placeholder="Search by Tag">
+        <button class="search" onclick="searchQuestions()">Search</button>
+        <button class="close" onclick="closeAddQuestionDialog()">Close</button>
+
+        <!-- Results Table -->
+        <table id="searchResultsTable" style="margin-top: 10px; width: 100%; display: none;">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Question</th>
+                    <th>Type</th>
+                    <th>Tags</th>
+                    <th>Actions</th> <!-- For Add to Quiz Button -->
+                </tr>
+            </thead>
+            <tbody id="searchResultsBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:5000/api"; // Replace with your API base URL
+        let quizId = null;
+        let quiz = null;
+        let questions = [];
+        let filteredQuestions = [];
+        let currentPage = 1; // Current page number
+        let pageSize = 5; // Number of questions per page
+
+        // Get query parameter value
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // Renders quiz details in the HTML
+        function renderQuizDetails(quiz) {
+            document.getElementById("quizDetails").innerHTML = `
+                <h2>${quiz.title}</h2>
+                <p>Time Limit: ${quiz.timeLimit} seconds</p>
+                <p>Passing Mark: ${quiz.passMark}%</p>
+            `;
+        }
+
+        // Fetch quiz details and its questions
+        async function fetchQuiz() {
+            try {
+                quizId = getQueryParam("id"); // Get quizId from URL
+                if (!quizId) {
+                    alert("Quiz ID is missing in the URL.");
+                    return;
+                }
+
+                console.log("Fetching quiz details for quiz ID:", quizId);
+
+                // Fetch quiz details
+                const response = await fetch(`${API_URL}/quizzes/${quizId}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch quiz details. Status: ${response.status}`);
+                }
+
+                const quizData = await response.json();
+                console.log("Fetched quiz details:", quizData);
+
+                renderQuizDetails(quizData);
+
+                // Extract question IDs
+                const questionIds = quizData.questions.map(q => q.questionId);
+
+                // Fetch full question details by IDs
+                const fetchedQuestions = await fetchQuestionsByIds(questionIds);
+
+                // Combine quiz questions with fetched details
+                questions = quizData.questions.map((q, index) => {
+                    const questionDetails = fetchedQuestions.find(fq => fq._id === q.questionId);
+                    return {
+                        ...q,
+                        questionDetails, // Add fetched question details
+                        displayOrder: index + 1 // Assign displayOrder based on index
+                    };
+                });
+
+                console.log("Combined questions with displayOrder:", questions);
+
+                // Call populateFilterDropdowns AFTER questions are populated
+                populateFilterDropdowns();
+
+                // Initialize filteredQuestions and display the questions
+                filteredQuestions = [...questions];
+                displayQuizQuestions(); // Render questions with pagination
+            } catch (error) {
+                console.error("Error fetching quiz:", error.message);
+                alert("An error occurred while fetching the quiz.");
+            }
+        }
+
+        // Filter questions
+        function filterQuestions() {
+            // Get filter inputs
+            const filterTag = document.getElementById("filterTag").value.trim(); // Selected tag
+            const filterType = document.getElementById("filterType").value.trim(); // Selected type
+            const filterQuestion = document.getElementById("filterQuestion").value.toLowerCase().trim(); // Search query
+
+            console.log("Filter Inputs:", { filterTag, filterType, filterQuestion });
+
+            // Filter the `questions` array
+            filteredQuestions = questions.filter(q => {
+                const details = q.questionDetails; // Access `questionDetails`
+                if (!details) return false; // Skip if `questionDetails` is missing
+
+                // Filter conditions
+                const matchesTag = !filterTag || (details.tags || []).includes(filterTag); // Match tag
+                const matchesType = !filterType || details.type === filterType; // Match type
+                const matchesQuestion = !filterQuestion || details.question.toLowerCase().includes(filterQuestion); // Match question text
+
+                return matchesTag && matchesType && matchesQuestion; // Must satisfy all conditions
+            });
+
+            console.log("Filtered Questions:", filteredQuestions);
+
+            // Reset pagination to the first page and re-render
+            currentPage = 1;
+            displayQuizQuestions();
+        }
+
+
+
+
+
+        // Fetch the questions by ids
+        async function fetchQuestionsByIds(questionIds) {
+            try {
+                const response = await fetch(`${API_URL}/questions/by-ids`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ questionIds })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch questions. Status: ${response.status}`);
+                }
+
+                const questions = await response.json();
+                console.log("Fetched questions:", questions);
+                return questions; // Return the fetched question details
+            } catch (error) {
+                console.error("Error fetching questions by IDs:", error.message);
+                alert("An error occurred while fetching questions.");
+                return [];
+            }
+        }
+
+        // Render questions in the table
+        function renderQuestions(paginatedQuestions) {
+            const tableBody = document.getElementById("questionsBody");
+            const table = document.getElementById("questionsTable");
+            const loading = document.getElementById("loading");
+
+            // Clear existing rows
+            tableBody.innerHTML = "";
+            loading.style.display = "none"; // Hide loading spinner
+            table.style.display = ""; // Show the table
+
+            if (paginatedQuestions.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="10" style="text-align: center;">No questions found.</td>
+                    </tr>`;
+                return;
+            }
+
+            // Render each question
+            paginatedQuestions.forEach((question) => {
+                const details = question.questionDetails; // Extract question details
+
+                if (!details) {
+                    console.warn("Missing details for question:", question);
+                    return;
+                }
+
+                const title = details.question || "Untitled";
+                const type = details.type || "Unknown";
+                const tags = (details.tags || []).join(", ") || "N/A";
+                const status = details.status || "Unknown";
+                const explanation = details.explanation || "N/A";
+                const vimeoId = details.vimeoId || "N/A";
+                const createdAt = new Date(details.createdAt).toLocaleString();
+                const updatedAt = new Date(details.updatedAt).toLocaleString();
+
+                const row = document.createElement("tr");
+                row.setAttribute("draggable", true); // Make the row draggable
+                row.setAttribute("data-index", question.displayOrder - 1); // Store the index for drag-and-drop logic
+
+                // Drag events
+                row.addEventListener("dragstart", handleDragStart);
+                row.addEventListener("dragover", handleDragOver);
+                row.addEventListener("drop", handleDrop);
+                row.addEventListener("dragend", handleDragEnd);
+
+                row.innerHTML = `
+                    <td>${question.displayOrder}</td> <!-- Correctly render the displayOrder -->
+                    <td>${title}</td>
+                    <td>${type}</td>
+                    <td>${status}</td>
+                    <td>${tags}</td>
+                    <td>${explanation}</td>
+                    <td>${vimeoId}</td>
+                    <td>${createdAt}</td>
+                    <td>${updatedAt}</td>
+                    <td class="actions">
+                        <button class="remove" onclick="removeFromQuiz('${question.questionId}')">Remove</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+let draggedIndex = null;
+
+function handleDragStart(event) {
+    draggedIndex = parseInt(event.target.getAttribute("data-index"), 10); // Save dragged row index
+    event.target.style.opacity = "0.5"; // Make the dragged row semi-transparent
+}
+
+function handleDragOver(event) {
+    event.preventDefault(); // Allow dropping
+    const targetRow = event.target.closest("tr");
+    if (targetRow) {
+        targetRow.style.border = "2px dashed #007bff"; // Highlight the row being dragged over
+    }
+}
+
+function handleDrop(event) {
+    event.preventDefault();
+
+    const targetRow = event.target.closest("tr");
+    if (!targetRow) return; // No valid target row
+
+    const targetIndex = parseInt(targetRow.getAttribute("data-index"), 10); // Get the index of the drop target
+
+    // Swap the dragged question with the target question in the `questions` array
+    const temp = questions[draggedIndex];
+    questions[draggedIndex] = questions[targetIndex];
+    questions[targetIndex] = temp;
+
+    // Update `displayOrder` values to reflect the new order
+    questions.forEach((q, idx) => (q.displayOrder = idx + 1));
+
+    // Re-render the table with the updated order
+    displayQuizQuestions();
+}
+
+function handleDragEnd(event) {
+    event.target.style.opacity = "1"; // Reset opacity
+    const rows = document.querySelectorAll("tr");
+    rows.forEach(row => (row.style.border = "")); // Reset borders for all rows
+}
+
+        function moveQuestionUp(index) {
+            // Prevent moving the first question up
+            if (index <= 0) {
+                console.warn("Cannot move the first question up.");
+                return;
+            }
+
+            // Swap the current question with the one above it
+            const temp = questions[index - 1];
+            questions[index - 1] = questions[index];
+            questions[index] = temp;
+
+            // Update `displayOrder` values
+            questions.forEach((q, idx) => (q.displayOrder = idx + 1));
+
+            // Re-render the table
+            displayQuizQuestions();
+        }
+
+        function moveQuestionDown(index) {
+            // Prevent moving the last question down
+            if (index >= questions.length - 1) {
+                console.warn("Cannot move the last question down.");
+                return;
+            }
+
+            // Swap the current question with the one below it
+            const temp = questions[index + 1];
+            questions[index + 1] = questions[index];
+            questions[index] = temp;
+
+            // Update `displayOrder` values
+            questions.forEach((q, idx) => (q.displayOrder = idx + 1));
+
+            // Re-render the table
+            displayQuizQuestions();
+        }
+
+function isValidObjectId(id) {
+    return /^[a-f\d]{24}$/i.test(id); // Regex for MongoDB ObjectId
+}
+
+async function saveQuestionOrder() {
+    try {
+        const payload = {
+            questions: questions
+                .filter(q => isValidObjectId(q.questionId)) // Filter valid ObjectIds
+                .map(q => ({
+                    questionId: q.questionId,
+                    displayOrder: q.displayOrder
+                }))
+        };
+
+        console.log("Validated payload being sent:", payload);
+
+        const response = await fetch(`/api/quizzes/${quizId}/update-order`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const errorResponse = await response.json();
+            console.error("Error response from server:", errorResponse);
+            throw new Error(errorResponse.error || "Failed to save question order.");
+        }
+
+        const result = await response.json();
+        alert(result.message);
+    } catch (error) {
+        console.error("Error saving question order:", error);
+        alert("An error occurred while saving the question order.");
+    }
+}
+
+
+function displayQuizQuestions() {
+    const startIndex = (currentPage - 1) * pageSize;
+    const paginatedQuestions =
+        pageSize === "all"
+            ? questions // Show all questions
+            : questions.slice(startIndex, startIndex + pageSize); // Paginated view
+
+    renderQuestions(paginatedQuestions); // Re-render the table
+    updatePagination(); // Update the pagination controls
+}
+
+
+        function updatePagination() {
+            const totalPages =
+                pageSize === "all" ? 1 : Math.ceil(filteredQuestions.length / pageSize); // Calculate total pages
+            const pageInfo = document.getElementById("pageInfo");
+            const prevButton = document.getElementById("prevPage");
+            const nextButton = document.getElementById("nextPage");
+
+            // Update page info
+            pageInfo.textContent =
+                pageSize === "all"
+                    ? "Showing all questions"
+                    : `Page ${currentPage} of ${totalPages}`;
+
+            // Enable/disable buttons
+            prevButton.disabled = currentPage === 1 || pageSize === "all";
+            nextButton.disabled = currentPage === totalPages || pageSize === "all";
+
+            // Show or hide pagination controls
+            const pagination = document.getElementById("pagination");
+            pagination.style.display = pageSize === "all" ? "none" : "block";
+        }
+
+        function goToPrevPage() {
+            if (currentPage > 1) {
+                currentPage--; // Decrease the current page
+                displayQuizQuestions(); // Re-render questions for the new page
+            }
+        }
+
+        function goToNextPage() {
+            const totalPages = Math.ceil(filteredQuestions.length / pageSize);
+            if (currentPage < totalPages) {
+                currentPage++; // Increase the current page
+                displayQuizQuestions(); // Re-render questions for the new page
+            }
+        }
+
+
+        // Remove a question from the quiz
+        async function removeFromQuiz(questionId) {
+            const confirmDelete = confirm("Are you sure you want to remove this question?");
+            if (!confirmDelete) return;
+
+            try {
+                // Call the API to remove the question from the quiz
+                const response = await fetch(`${API_URL}/quizzes/${quizId}/remove-question`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ questionId })
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to remove question from quiz.");
+                }
+
+                const data = await response.json();
+                console.log("Question removed from quiz:", data);
+
+                // Update client-side data
+                questions = questions.filter(q => q.questionId !== questionId); // Remove the question from the `questions` array
+
+                // Recalculate the `displayOrder` for the remaining questions
+                questions.forEach((q, index) => {
+                    q.displayOrder = index + 1; // Update displayOrder
+                });
+
+                // Re-render the table to reflect the updated order
+                displayQuizQuestions();
+            } catch (error) {
+                console.error("Error removing question:", error);
+                alert("Failed to remove question from quiz. Please try again.");
+            }
+        }
+        // Open the "Add Question" dialog
+        function openAddQuestionDialog() {
+            document.getElementById("overlay").style.display = "block";
+            document.getElementById("addQuestionDialog").style.display = "block";
+        }
+
+        // Close the "Add Question" dialog
+        function closeAddQuestionDialog() {
+            document.getElementById("overlay").style.display = "none";
+            document.getElementById("addQuestionDialog").style.display = "none";
+        }
+
+       
+        // Search for questions to add
+        async function searchQuestions() {
+            // Get the search inputs
+            const title = document.getElementById("searchTitle").value.trim();
+            const tag = document.getElementById("searchTag").value.trim();
+
+            try {
+                // Call the API to search questions
+                const response = await fetch(`${API_URL}/questions/search`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ title, tag })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to search questions. Status: ${response.status}`);
+                }
+
+                // Parse the response
+                const results = await response.json();
+                console.log("Search Results:", results);
+
+                // Render the search results in the dialog
+                renderSearchResults(results);
+            } catch (error) {
+                console.error("Error searching questions:", error);
+                alert("Failed to search for questions. Please try again.");
+            }
+        }
+
+        function populateFilterDropdowns() {
+            // Get unique tags and types
+            const uniqueTags = [...new Set(questions.flatMap(q => q.questionDetails?.tags || []))];
+            const uniqueTypes = [...new Set(questions.map(q => q.questionDetails?.type || "Unknown"))];
+
+            // Populate "Filter by Tag"
+            const filterTagDropdown = document.getElementById("filterTag");
+            filterTagDropdown.innerHTML = '<option value="">Filter by Tag</option>';
+            uniqueTags.forEach(tag => {
+                const option = document.createElement("option");
+                option.value = tag;
+                option.textContent = tag;
+                filterTagDropdown.appendChild(option);
+            });
+
+            // Populate "Filter by Type"
+            const filterTypeDropdown = document.getElementById("filterType");
+            filterTypeDropdown.innerHTML = '<option value="">Filter by Type</option>';
+            uniqueTypes.forEach(type => {
+                const option = document.createElement("option");
+                option.value = type;
+                option.textContent = type;
+                filterTypeDropdown.appendChild(option);
+            });
+        }
+
+
+
+        // Render search results in the dialog
+        function renderSearchResults(results) {
+            const tableBody = document.getElementById("searchResultsBody");
+            const table = document.getElementById("searchResultsTable");
+
+            // Clear previous results
+            tableBody.innerHTML = "";
+
+            if (results.length === 0) {
+                // Show "No questions found" if the results are empty
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center;">No questions found</td>
+                    </tr>`;
+            } else {
+                // Populate the table with the search results
+                results.forEach((question, index) => {
+                    const row = `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${question.question}</td>
+                            <td>${question.type}</td>
+                            <td>${(question.tags || []).join(", ")}</td>
+                            <td>
+                                <button class="add" onclick="addToQuiz('${question._id}')">Add to Quiz</button>
+                            </td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+            }
+
+            // Ensure the table is visible
+            table.style.display = "table";
+        }
+
+        // Add a question to the quiz
+        async function addToQuiz(questionId) {
+            try {
+                const response = await fetch(`${API_URL}/quizzes/${quizId}/add-question`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ questionId })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to add question to quiz. Status: ${response.status}`);
+                }
+
+                alert("Question successfully added to the quiz!");
+                closeAddQuestionDialog(); // Close the dialog
+                fetchQuiz(); // Refresh the quiz table to update displayOrder
+            } catch (error) {
+                console.error("Error adding question to quiz:", error);
+                alert("Failed to add question to the quiz. Please try again.");
+            }
+        }
+
+        function updatePageSize() {
+            const selectedPageSize = document.getElementById("pageSize").value;
+            pageSize = selectedPageSize === "all" ? "all" : parseInt(selectedPageSize, 10); // Update pageSize
+            currentPage = 1; // Reset to the first page
+            displayQuizQuestions(); // Re-render questions
+        }
+
+
+        // Fetch quiz on page load
+        document.getElementById("filterTag").addEventListener("change", filterQuestions);
+        document.getElementById("filterType").addEventListener("change", filterQuestions);
+        document.getElementById("filterQuestion").addEventListener("input", filterQuestions);
+        window.onload = fetchQuiz;
+    </script>
+</body>
+</html>

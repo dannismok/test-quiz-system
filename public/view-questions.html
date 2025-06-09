@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Questions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        header {
+            background-color: #007bff;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        #welcome-container {
+            margin-top: 10px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .actions {
+            margin-bottom: 20px;
+        }
+
+        .filters {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .filters select,
+        .filters input {
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .pagination button {
+            padding: 8px 12px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+
+        .pagination button:disabled {
+            background-color: #ddd;
+            cursor: not-allowed;
+        }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    table-layout: auto; /* Allows columns to resize dynamically */
+}
+
+table th, table td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: left;
+    word-wrap: break-word; /* Ensures long text wraps within the cell */
+}
+
+table th {
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px; /* Increase container width */
+    margin: 20px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+table-wrapper {
+    overflow-x: auto; /* Add horizontal scrolling for smaller screens */
+}
+
+        .action-buttons button {
+            margin-right: 5px;
+            padding: 5px 10px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .action-buttons .update {
+            background-color: #ffc107;
+        }
+
+        .action-buttons .delete {
+            background-color: #dc3545;
+        }
+
+        .action-buttons .toggle {
+            background-color: #007bff;
+        }
+
+        .action-buttons .toggle:hover {
+            background-color: #0056b3;
+        }
+
+        .loading {
+            text-align: center;
+            color: #555;
+        }
+
+ .actions {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .add-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+        }
+
+        .add-button:hover {
+            background-color: #218838;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        table th, table td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        table th {
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+    .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 400px;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .modal h2 {
+            margin-top: 0;
+        }
+
+        .modal form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .modal form input,
+        .modal form select {
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .answer-list {
+            margin-top: 10px;
+        }
+
+        .answer-list div {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .answer-list div input[type="checkbox"] {
+            margin: 0;
+            width: 16px;
+            height: 16px;
+        }
+
+        .answer-list div input[type="text"] {
+            flex: 1;
+        }
+
+        .modal form button {
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+
+        .modal form button:hover {
+            background-color: #0056b3;
+        }
+
+        .close-button {
+            background: none;
+            border: none;
+            color: #007bff;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: auto;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>View Questions</h1>
+        <div id="welcome-container"></div>
+    </header>
+
+    <div class="container">
+        <!-- Back to Dashboard Button -->
+        <div class="actions">
+            <a href="/index.html" class="back-button">Back to Dashboard</a>
+            <button class="add-button" onclick="openAddQuestionModal()">Add Question</button>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters">
+            <select id="filterTag">
+                <option value="">Filter by Tag</option>
+            </select>
+            <select id="filterType">
+                <option value="">Filter by Type</option>
+            </select>
+            <input type="text" id="filterQuestion" placeholder="Filter by Question">
+        </div>
+
+        <!-- Questions Table -->
+        <div id="loading" class="loading">Loading questions...</div>
+        <table id="questionsTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Question</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Tags</th>
+                    <th>Answers</th> <!-- New Column for Answers -->
+                    <th>Explanation</th> <!-- New Column for Explanation -->
+                    <th>Vimeo ID</th> <!-- New Column for Vimeo ID -->
+                    <th>Created Date</th>
+                    <th>Updated Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="questionsBody"></tbody>
+        </table>
+
+        <!-- Pagination -->
+        <div class="pagination">
+            <button id="prevPage" disabled>Previous</button>
+            <button id="nextPage" disabled>Next</button>
+        </div>
+    </div>
+
+
+<div class="modal-overlay" id="modalOverlay"></div>
+<div class="modal" id="addQuestionModal">
+    <button class="close-button" onclick="closeAddQuestionModal()">X</button>
+    <h2 id="modalTitle">Add New Question</h2> <!-- Dynamic title -->
+    <form id="addQuestionForm" class="wider-modal">
+        <textarea id="newQuestion" placeholder="Question Text" required></textarea>
+        <select id="newType" required onchange="handleQuestionTypeChange()">
+            <option value="">Select Question Type</option>
+            <option value="fill_in_the_blank">Fill in the Blank</option>
+            <option value="multiple_choice">Multiple Choice</option>
+            <option value="single_choice">Single Choice</option>
+            <option value="matching">Matching</option>
+            <option value="true_false">True/False</option> <!-- Added True/False option -->
+        </select>
+        <input type="text" id="newTags" placeholder="Tags (comma-separated)">
+
+        <!-- Options Section (for multiple-choice and single-choice questions) -->
+        <div id="optionsSection" style="display: none;">
+            <div id="optionsContainer"></div>
+            <button type="button" onclick="addOption()">Add Option</button>
+        </div>
+
+        <!-- Pairs Section (for matching questions) -->
+        <div id="pairsSection" style="display: none;">
+            <div id="pairsContainer"></div>
+            <button type="button" onclick="addPair()">Add Pair</button>
+        </div>
+
+        <!-- Fill-in-the-Blank Section -->
+        <div id="fillInSection" style="display: none;">
+            <textarea id="fillInAnswers" placeholder="Correct Answers (comma-separated)"></textarea>
+        </div>
+
+        <!-- True/False Section -->
+        <div id="trueFalseSection" style="display: none; margin-top: 10px;">
+            <label>
+                <input type="radio" name="trueFalseAnswer" value="True" required>
+                True
+            </label>
+            <label style="margin-left: 20px;">
+                <input type="radio" name="trueFalseAnswer" value="False" required>
+                False
+            </label>
+        </div>
+
+        <div>
+            <button type="button" id="showBackgroundButton" onclick="toggleBackgroundSection()">Add Background</button>
+        </div>
+        <div id="backgroundSection" style="display: none;">
+            <textarea id="backgroundText" placeholder="Background Text"></textarea>
+            <input type="text" id="backgroundGraphic" placeholder="Background Graphic URL (optional)">
+        </div>
+        <select id="newStatus" required>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+        </select>
+        <textarea id="newExplanation" placeholder="Explanation"></textarea>
+        <input type="text" id="newVimeoId" placeholder="Vimeo ID (optional)">
+        <div style="margin-top: 20px;">
+            <button type="submit" id="saveButton">Add Question</button>
+            <button type="button" onclick="closeAddQuestionModal()">Cancel</button>
+        </div>
+    </form>
+</div>
+
+
+    <script>
+        const API_URL = "http://localhost:5000/api/questions"; // Replace with your API endpoint
+        let questions = [];
+        let currentPage = 1;
+        const pageSize = 10;
+
+        async function fetchQuestions() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                questions = await response.json();
+                populateFilters();
+                displayQuestions();
+            } catch (error) {
+                document.getElementById('loading').innerText = `Error: ${error.message}`;
+            }
+        }
+
+        function populateFilters() {
+            const filterTag = document.getElementById("filterTag");
+            const filterType = document.getElementById("filterType");
+
+            const uniqueTags = [...new Set(questions.flatMap(q => q.tags || []))];
+            const uniqueTypes = [...new Set(questions.map(q => q.type))];
+
+            uniqueTags.forEach(tag => {
+                const option = document.createElement("option");
+                option.value = tag;
+                option.textContent = tag;
+                filterTag.appendChild(option);
+            });
+
+            uniqueTypes.forEach(type => {
+                const option = document.createElement("option");
+                option.value = type;
+                option.textContent = type;
+                filterType.appendChild(option);
+            });
+        }
+
+function displayQuestions() {
+    const filterTag = document.getElementById("filterTag").value;
+    const filterType = document.getElementById("filterType").value;
+    const filterQuestion = document.getElementById("filterQuestion").value.toLowerCase();
+
+    const filteredQuestions = questions
+        .filter(q => (!filterTag || (q.tags || []).includes(filterTag)))
+        .filter(q => (!filterType || q.type === filterType))
+        .filter(q => (!filterQuestion || q.question.toLowerCase().includes(filterQuestion)));
+
+    const startIndex = (currentPage - 1) * pageSize;
+    const paginatedQuestions = filteredQuestions.slice(startIndex, startIndex + pageSize);
+
+    const tableBody = document.getElementById("questionsBody");
+    const table = document.getElementById("questionsTable");
+    const loading = document.getElementById("loading");
+
+    tableBody.innerHTML = "";
+    loading.style.display = "none";
+    table.style.display = "";
+
+    paginatedQuestions.forEach((question, index) => {
+        const row = document.createElement("tr");
+
+        // Format answers for display
+        let answersDisplay = "";
+        if (question.type === "true_false") {
+            answersDisplay = question.correctAnswers[0]; // Display True/False
+        } else if (question.type === "fill_in_the_blank") {
+            answersDisplay = question.correctAnswers.join(", "); // Display all correct answers
+        } else if (question.type === "multiple_choice" || question.type === "single_choice") {
+            answersDisplay = question.options
+                .filter(option => option.isCorrect)
+                .map(option => option.text)
+                .join(", "); // Display all correct options
+        }
+
+        // Vimeo ID display
+        const vimeoDisplay = question.vimeoId ? question.vimeoId : "N/A";
+
+        row.innerHTML = `
+            <td>${startIndex + index + 1}</td>
+            <td>${question.question}</td>
+            <td>${question.type}</td>
+            <td>${question.status}</td>
+            <td>${(question.tags || []).join(", ")}</td>
+            <td>${answersDisplay || "N/A"}</td> <!-- Answers -->
+            <td>${question.explanation || "N/A"}</td> <!-- Explanation -->
+            <td>${vimeoDisplay}</td> <!-- Vimeo ID -->
+            <td>${new Date(question.createdAt).toLocaleDateString()} ${new Date(question.createdAt).toLocaleTimeString()}</td>
+            <td>${new Date(question.updatedAt).toLocaleDateString()} ${new Date(question.updatedAt).toLocaleTimeString()}</td>
+            <td class="action-buttons">
+                <button class="update" onclick="updateQuestion('${question._id}')">Update</button>
+                <button class="delete" onclick="deleteQuestion('${question._id}')">Delete</button>
+                <button class="toggle" onclick="toggleStatus('${question._id}', '${question.status}')">
+                    ${question.status === "active" ? "Deactivate" : "Activate"}
+                </button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+
+    document.getElementById("prevPage").disabled = currentPage === 1;
+    document.getElementById("nextPage").disabled = startIndex + pageSize >= filteredQuestions.length;
+}
+        async function toggleStatus(id, currentStatus) {
+            const newStatus = currentStatus === "active" ? "inactive" : "active";
+            try {
+                const response = await fetch(`${API_URL}/${id}/status`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ status: newStatus }),
+                });
+                if (response.ok) {
+                    alert(`Question status updated to ${newStatus}!`);
+                    questions = questions.map(q =>
+                        q._id === id ? { ...q, status: newStatus } : q
+                    );
+                    displayQuestions();
+                } else {
+                    throw new Error("Failed to update status.");
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        function updateQuestion(id) {
+            window.location.href = `/update-question.html?id=${id}`;
+        }
+
+async function deleteQuestion(id) {
+    console.log("Deleting question with ID:", id); // Debugging log
+
+    try {
+        const response = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+
+        if (response.ok) {
+            alert("Question deleted successfully!");
+            questions = questions.filter(q => q._id !== id); // Remove the question from the local array
+            displayQuestions(); // Refresh the table
+        } else {
+            const result = await response.json();
+            console.error("Error response from the backend:", result); // Log the backend response
+            alert(result.error || "Failed to delete question.");
+        }
+    } catch (error) {
+        console.error("Error deleting question:", error);
+        alert("An unexpected error occurred while deleting the question.");
+    }
+}
+
+        function openAddQuestionModal() {
+            // Reset the form fields
+            resetAddQuestionForm();
+
+            // Change modal title and button text
+            document.getElementById("modalTitle").innerText = "Add New Question";
+            document.getElementById("saveButton").innerText = "Add Question";
+
+            // Set the form's onsubmit handler to the addQuestion function
+            document.getElementById("addQuestionForm").onsubmit = addQuestion;
+
+            // Show the modal
+            document.getElementById("modalOverlay").style.display = "block";
+            document.getElementById("addQuestionModal").style.display = "block";
+        }
+
+        function closeAddQuestionModal() {
+            document.getElementById("modalOverlay").style.display = "none";
+            document.getElementById("addQuestionModal").style.display = "none";
+        }
+
+    function toggleBackgroundSection() {
+        const backgroundSection = document.getElementById('backgroundSection');
+        const showBackgroundButton = document.getElementById('showBackgroundButton');
+        if (backgroundSection.style.display === 'none') {
+            backgroundSection.style.display = 'block';
+            showBackgroundButton.innerText = 'Remove Background';
+        } else {
+            backgroundSection.style.display = 'none';
+            showBackgroundButton.innerText = 'Add Background';
+        }
+    }
+
+        function handleQuestionTypeChange() {
+            const questionType = document.getElementById('newType').value;
+
+            // Sections
+            const optionsSection = document.getElementById('optionsSection');
+            const pairsSection = document.getElementById('pairsSection');
+            const fillInSection = document.getElementById('fillInSection');
+            const trueFalseSection = document.getElementById('trueFalseSection');
+
+            // Radio buttons for True/False
+            const trueFalseRadios = document.querySelectorAll('input[name="trueFalseAnswer"]');
+
+            // Hide all sections by default
+            optionsSection.style.display = 'none';
+            pairsSection.style.display = 'none';
+            fillInSection.style.display = 'none';
+            trueFalseSection.style.display = 'none';
+
+            // Remove "required" attribute from True/False radios by default
+            trueFalseRadios.forEach(radio => radio.removeAttribute('required'));
+
+            // Show relevant sections based on question type
+            if (questionType === 'multiple_choice' || questionType === 'single_choice') {
+                optionsSection.style.display = 'block';
+            } else if (questionType === 'matching') {
+                pairsSection.style.display = 'block';
+            } else if (questionType === 'fill_in_the_blank') {
+                fillInSection.style.display = 'block';
+            } else if (questionType === 'true_false') {
+                trueFalseSection.style.display = 'block';
+                // Add "required" attribute to True/False radios when visible
+                trueFalseRadios.forEach(radio => radio.setAttribute('required', 'true'));
+            }
+        }
+    function addOption() {
+        const optionsContainer = document.getElementById('optionsContainer');
+        const optionDiv = document.createElement('div');
+        optionDiv.innerHTML = `
+            <input type="text" placeholder="Option Text" required>
+            <input type="text" placeholder="Graphic URL (optional)">
+            <label>
+                <input type="checkbox" title="Mark as Correct">
+                Correct Answer
+            </label>
+            <button type="button" onclick="removeElement(this)">Remove</button>
+        `;
+        optionsContainer.appendChild(optionDiv);
+    }
+
+    function addPair() {
+        const pairsContainer = document.getElementById('pairsContainer');
+        const pairDiv = document.createElement('div');
+        pairDiv.innerHTML = `
+            <input type="text" placeholder="Key" required>
+            <input type="text" placeholder="Value" required>
+            <button type="button" onclick="removeElement(this)">Remove</button>
+        `;
+        pairsContainer.appendChild(pairDiv);
+    }
+
+    function removeElement(button) {
+        button.parentElement.remove();
+    }
+
+    async function addQuestion(event) {
+        event.preventDefault();
+
+        const question = document.getElementById('newQuestion').value;
+        const type = document.getElementById('newType').value;
+        const tags = document.getElementById('newTags').value.split(',').map(tag => tag.trim());
+        const explanation = document.getElementById('newExplanation').value;
+        const vimeoId = document.getElementById('newVimeoId').value;
+        const status = document.getElementById('newStatus').value;
+
+        // Collect answers based on question type
+        const options = Array.from(document.querySelectorAll('#optionsContainer > div')).map(optionDiv => ({
+            text: optionDiv.querySelector('input[placeholder="Option Text"]').value,
+            graphic: optionDiv.querySelector('input[placeholder="Graphic URL (optional)"]').value,
+            isCorrect: optionDiv.querySelector('input[type="checkbox"]').checked
+        }));
+
+        const pairs = Array.from(document.querySelectorAll('#pairsContainer > div')).map(pairDiv => ({
+            key: pairDiv.querySelector('input[placeholder="Key"]').value,
+            value: pairDiv.querySelector('input[placeholder="Value"]').value
+        }));
+
+        const fillInAnswers = document.getElementById('fillInAnswers').value
+            .split(',')
+            .map(answer => answer.trim());
+
+        const trueFalseAnswer = document.querySelector('input[name="trueFalseAnswer"]:checked')?.value;
+
+        const background = {
+            text: document.getElementById('backgroundText').value,
+            graphic: document.getElementById('backgroundGraphic').value
+        };
+
+        const payload = {
+            question,
+            type,
+            tags,
+            explanation,
+            vimeoId,
+            status,
+            options: type === 'multiple_choice' || type === 'single_choice' ? options : undefined,
+            pairs: type === 'matching' ? pairs : undefined,
+            correctAnswers: type === 'fill_in_the_blank' ? fillInAnswers : (type === 'true_false' ? [trueFalseAnswer] : undefined),
+            background: background.text || background.graphic ? background : undefined
+        };
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                alert('Question added successfully!');
+                closeAddQuestionModal();
+                resetAddQuestionForm();
+                fetchQuestions(); // Reload the questions list
+            } else {
+                const result = await response.json();
+                alert(`Failed to add question: ${result.message}`);
+            }
+        } catch (error) {
+            console.error('Error adding question:', error);
+            alert('An unexpected error occurred.');
+        }
+    }
+
+    // Reset the modal form
+    function resetAddQuestionForm() {
+        document.getElementById("addQuestionForm").reset(); // Reset all input and select fields
+        document.getElementById('optionsContainer').innerHTML = ""; // Clear dynamically added options
+        document.getElementById('pairsContainer').innerHTML = ""; // Clear dynamically added pairs
+        document.getElementById('backgroundSection').style.display = 'none'; // Hide the background section
+        document.getElementById('showBackgroundButton').innerText = 'Add Background'; // Reset button text
+    }
+
+async function updateQuestion(id) {
+    // Find the question from the list of questions
+    const question = questions.find(q => q._id === id);
+
+    if (!question) {
+        alert("Question not found!");
+        return;
+    }
+
+    // Open the modal
+    openAddQuestionModal();
+
+    // Change modal title and button text
+    document.getElementById("modalTitle").innerText = "Update Question";
+    document.getElementById("saveButton").innerText = "Update Question";
+
+    // Prefill the basic fields
+    document.getElementById("newQuestion").value = question.question;
+    document.getElementById("newType").value = question.type;
+    document.getElementById("newTags").value = (question.tags || []).join(", ");
+    document.getElementById("newExplanation").value = question.explanation || "";
+    document.getElementById("newVimeoId").value = question.vimeoId || "";
+    document.getElementById("newStatus").value = question.status;
+
+    // Prefill options
+    const optionsContainer = document.getElementById("optionsContainer");
+    optionsContainer.innerHTML = ""; // Clear any existing options
+    if (question.options) {
+        question.options.forEach(option => {
+            const optionDiv = document.createElement("div");
+            optionDiv.innerHTML = `
+                <input type="text" placeholder="Option Text" value="${option.text}" required>
+                <input type="text" placeholder="Graphic URL (optional)" value="${option.graphic || ""}">
+                <label>
+                    <input type="checkbox" ${option.isCorrect ? "checked" : ""} title="Mark as Correct">
+                    Correct Answer
+                </label>
+                <button type="button" onclick="removeElement(this)">Remove</button>
+            `;
+            optionsContainer.appendChild(optionDiv);
+        });
+    }
+
+    // Prefill pairs (if applicable)
+    const pairsContainer = document.getElementById("pairsContainer");
+    pairsContainer.innerHTML = ""; // Clear existing pairs
+    if (question.pairs) {
+        question.pairs.forEach(pair => {
+            const pairDiv = document.createElement("div");
+            pairDiv.innerHTML = `
+                <input type="text" placeholder="Key" value="${pair.key}" required>
+                <input type="text" placeholder="Value" value="${pair.value}" required>
+                <button type="button" onclick="removeElement(this)">Remove</button>
+            `;
+            pairsContainer.appendChild(pairDiv);
+        });
+    }
+
+    // Prefill background
+    const backgroundText = document.getElementById("backgroundText");
+    const backgroundGraphic = document.getElementById("backgroundGraphic");
+    const backgroundSection = document.getElementById("backgroundSection");
+    if (question.background) {
+        backgroundText.value = question.background.text || "";
+        backgroundGraphic.value = question.background.graphic || "";
+        backgroundSection.style.display = "block"; // Show the background section
+        document.getElementById("showBackgroundButton").innerText = "Remove Background";
+    } else {
+        backgroundText.value = "";
+        backgroundGraphic.value = "";
+        backgroundSection.style.display = "none"; // Hide the background section
+        document.getElementById("showBackgroundButton").innerText = "Add Background";
+    }
+
+    // Adjust sections based on the question type
+    handleQuestionTypeChange();
+
+    // Update form submission behavior for update
+    document.getElementById("addQuestionForm").onsubmit = async function (event) {
+        event.preventDefault();
+
+        const payload = {
+            question: document.getElementById("newQuestion").value,
+            type: document.getElementById("newType").value,
+            tags: document.getElementById("newTags").value.split(",").map(tag => tag.trim()),
+            explanation: document.getElementById("newExplanation").value,
+            vimeoId: document.getElementById("newVimeoId").value,
+            status: document.getElementById("newStatus").value,
+            options: Array.from(document.querySelectorAll("#optionsContainer > div")).map(optionDiv => ({
+                text: optionDiv.querySelector('input[placeholder="Option Text"]').value,
+                graphic: optionDiv.querySelector('input[placeholder="Graphic URL (optional)"]').value,
+                isCorrect: optionDiv.querySelector('input[type="checkbox"]').checked // Capture the checkbox value
+            })),
+            pairs: Array.from(document.querySelectorAll("#pairsContainer > div")).map(pairDiv => ({
+                key: pairDiv.querySelector('input[placeholder="Key"]').value,
+                value: pairDiv.querySelector('input[placeholder="Value"]').value
+            })),
+            background: {
+                text: backgroundText.value,
+                graphic: backgroundGraphic.value
+            }
+        };
+
+        try {
+            const response = await fetch(`${API_URL}/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                alert("Question updated successfully!");
+                closeAddQuestionModal();
+                fetchQuestions(); // Reload the questions list
+            } else {
+                const result = await response.json();
+                alert(`Failed to update question: ${result.message}`);
+            }
+        } catch (error) {
+            console.error("Error updating question:", error);
+            alert("An unexpected error occurred.");
+        }
+    };
+}
+
+    document.getElementById("filterTag").addEventListener("change", displayQuestions);
+    document.getElementById("filterType").addEventListener("change", displayQuestions);
+    document.getElementById("filterQuestion").addEventListener("input", displayQuestions);
+    document.getElementById("prevPage").addEventListener("click", () => {
+        currentPage -= 1;
+        displayQuestions();
+    });
+    document.getElementById("nextPage").addEventListener("click", () => {
+        currentPage += 1;
+        displayQuestions();
+    });
+
+
+    fetchQuestions();
+    </script>
+</body>
+</html>

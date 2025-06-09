@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Subscriptions</title>
+  <style>
+    /* General styles */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    header {
+      background-color: #007bff;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2rem;
+    }
+    main {
+      padding: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .primary-btn {
+      background-color: #007bff;
+      color: white;
+    }
+    .primary-btn:hover {
+      background-color: #0056b3;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: white;
+      border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    table th, table td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: left;
+    }
+    table th {
+      background-color: #007bff;
+      color: white;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .dialog-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      display: none;
+    }
+    .dialog-box {
+      background-color: white;
+      border-radius: 8px;
+      padding: 20px;
+      width: 400px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    .dialog-box ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    .dialog-box li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+    }
+    .dialog-box li span {
+      flex: 1;
+    }
+    .dialog-box button {
+      margin-top: 15px;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+    }
+    .close-btn {
+      background-color: #dc3545;
+      color: white;
+    }
+    .close-btn:hover {
+      background-color: #c82333;
+    }
+    .add-btn {
+      background-color: #007bff;
+      color: white;
+    }
+    .add-btn:hover {
+      background-color: #0056b3;
+    }
+    .selected-users {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .selected-users span {
+      display: inline-block;
+      margin-right: 10px;
+      padding: 5px 10px;
+      background-color: #007bff;
+      color: white;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+  .selected-user {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f8f9fa;
+    padding: 10px;
+    margin-bottom: 5px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+  }
+
+  .remove-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+
+  .remove-btn:hover {
+    background-color: #c82333;
+  }
+
+
+  </style>
+</head>
+<body>
+  <header>
+    <h1 id="headerTitle">Manage Course Subscription - Loading...</h1>
+  </header>
+  <main>
+    <button class="primary-btn" onclick="openSelectUserDialog()">Select User to Subscribe</button>
+    <div class="selected-users" id="selectedUsers"></div>
+    <div>
+        <label for="expiryDays">Set Expiry Days:</label>
+        <input type="number" id="expiryDays" value="365" min="1" style="width: 100px; margin-left: 5px;">
+    </div>
+    <button type="button" class="add-btn" onclick="confirmSubscriptions()">Confirm Subscription</button>
+    <table id="subscriptionTable" class="subscription-table">
+    <thead>
+        <tr>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Subscribe From</th>
+        <th>Expiration Date</th>
+        <th>Status</th>
+        <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Subscriptions will be dynamically added here -->
+    </tbody>
+    </table>
+  </main>
+
+  <!-- Select User Dialog -->
+  <div class="dialog-overlay" id="selectUserDialog">
+    <div class="dialog-box">
+      <h2>Select User</h2>
+      <input type="text" id="searchUsername" placeholder="Search by Username">
+      <input type="text" id="searchEmail" placeholder="Search by Email">
+      <input type="text" id="searchPhone" placeholder="Search by Phone">
+      <button class="primary-btn" onclick="searchUsers()">Search</button>
+      <ul id="userList"></ul>
+      <button type="button" class="close-btn" onclick="closeSelectUserDialog()">Cancel</button>
+      <button type="button" class="add-btn" onclick="confirmSelection()">OK</button>
+    </div>
+  </div>
+
+  <script>
+    const queryParams = new URLSearchParams(window.location.search);
+    const courseId = queryParams.get("courseId");
+    const selectedUsers = [];
+
+    // Fetch course information
+    const fetchCourseInfo = async () => {
+      const response = await fetch(`http://localhost:5000/api/courses/${courseId}`);
+      const course = await response.json();
+      document.getElementById("headerTitle").textContent = `Manage Course Subscription - ${course.title}`;
+    };
+
+    // Fetch subscriptions
+    const fetchSubscriptions = async () => {
+      const response = await fetch(`http://localhost:5000/api/subscriptions/course/${courseId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+        },
+      });
+      const { subscriptions } = await response.json();
+      renderSubscriptions(subscriptions);
+    };
+
+
+// Render subscriptions
+const renderSubscriptions = (subscriptions) => {
+  const tableBody = document.getElementById("subscriptionTable").querySelector("tbody");
+  tableBody.innerHTML = ""; // Clear the table body
+
+  subscriptions.forEach((sub) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${sub.userId.username}</td>
+      <td>${sub.userId.email}</td>
+      <td>${new Date(sub.subscriptionDate).toLocaleDateString()}</td>
+      <td>${new Date(sub.expirationDate).toLocaleDateString()}</td>
+      <td>${sub.isActive ? "Active" : "Inactive"}</td>
+      <td>
+        <button onclick="setSubscriptionInactive('${sub._id}')">Set Inactive</button>
+        <button onclick="deleteSubscription('${sub._id}')">Delete</button>
+        <button onclick="editSubscription('${sub._id}', '${sub.expirationDate}')">Edit</button>
+      </td>
+    `;
+    tableBody.appendChild(row);
+  });
+};
+
+
+const setSubscriptionInactive = async (subscriptionId) => {
+  try {
+    const response = await fetch(`http://localhost:5000/api/subscriptions/${subscriptionId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+      },
+      body: JSON.stringify({ isActive: false }), // Set the subscription to inactive
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to set subscription to inactive.");
+    }
+
+    alert("Subscription set to inactive successfully.");
+    const courseId = new URLSearchParams(window.location.search).get("courseId");
+    updateSubscriptionTable(courseId); // Refresh the subscription table
+  } catch (error) {
+    console.error("Error setting subscription to inactive:", error);
+  }
+};
+
+const deleteSubscription = async (subscriptionId) => {
+  try {
+    const response = await fetch(`http://localhost:5000/api/subscriptions/${subscriptionId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to delete subscription.");
+    }
+
+    alert("Subscription deleted successfully.");
+    updateSubscriptionTable(courseId);
+  } catch (error) {
+    console.error("Error deleting subscription:", error);
+  }
+};
+
+const editSubscription = async (subscriptionId, currentExpirationDate) => {
+  const newExpirationDate = prompt(
+    "Enter new expiration date (YYYY-MM-DD):",
+    new Date(currentExpirationDate).toISOString().split("T")[0]
+  );
+
+  if (!newExpirationDate) {
+    return alert("Expiration date update cancelled.");
+  }
+
+  try {
+    const response = await fetch(`http://localhost:5000/api/subscriptions/${subscriptionId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+      },
+      body: JSON.stringify({ expirationDate: new Date(newExpirationDate).toISOString() }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update subscription expiration date.");
+    }
+
+    alert("Subscription expiration date updated successfully.");
+    updateSubscriptionTable(courseId);
+  } catch (error) {
+    console.error("Error updating subscription expiration date:", error);
+  }
+};
+
+    // Open dialog box and show the last 3 added users
+const openSelectUserDialog = async () => {
+  try {
+    const response = await fetch("http://localhost:5000/api/user/users", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        alert("Unauthorized. Please log in again.");
+        window.location.href = "/login.html"; // Redirect to login
+      } else {
+        throw new Error(`Failed to fetch users: ${response.statusText}`);
+      }
+    }
+
+    const data = await response.json();
+    const users = Array.isArray(data) ? data : data.users; // Extract array if wrapped
+    if (!Array.isArray(users)) {
+      console.error("Expected an array of users, but got:", users);
+      return;
+    }
+
+    // Limit to the last 3 users, sorted by createdAt
+    const last3Users = users
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 3);
+    renderUserList(last3Users);
+
+    document.getElementById("selectUserDialog").style.display = "flex";
+  } catch (error) {
+    console.error("Error fetching or processing users:", error.message);
+  }
+};
+
+const confirmSubscriptions = async () => {
+  if (selectedUsers.length === 0) {
+    return alert("No users selected for subscription.");
+  }
+
+  const courseId = new URLSearchParams(window.location.search).get("courseId");
+  if (!courseId) {
+    return alert("Course ID is missing.");
+  }
+
+  const expiryDays = parseInt(document.getElementById("expiryDays").value) || 365; // Default to 365 days
+  const currentDate = new Date();
+
+  try {
+    const promises = selectedUsers.map(async (user) => {
+      const expirationDate = new Date(currentDate);
+      expirationDate.setDate(currentDate.getDate() + expiryDays);
+
+      // Send subscription request to the backend
+      const response = await fetch("http://localhost:5000/api/subscriptions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          courseId,
+          subscriptionDate: currentDate.toISOString(),
+          expirationDate: expirationDate.toISOString(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to subscribe user: ${user.username}`);
+      }
+    });
+
+    await Promise.all(promises);
+
+    alert("Subscriptions and quiz registrations successfully created!");
+    selectedUsers.length = 0; // Clear selected users
+    renderSelectedUsers();
+    updateSubscriptionTable(courseId); // Refresh the subscription table
+  } catch (error) {
+    console.error("Error confirming subscriptions:", error);
+    alert("Failed to create subscriptions. Please try again.");
+  }
+};
+
+const updateSubscriptionTable = async (courseId) => {
+  try {
+    const response = await fetch(`http://localhost:5000/api/subscriptions/course/${courseId}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch subscriptions for the course.");
+    }
+
+    const { subscriptions } = await response.json();
+
+    // Render the subscription table
+    const tableBody = document.getElementById("subscriptionTable").querySelector("tbody");
+    tableBody.innerHTML = ""; // Clear only the table body
+
+    subscriptions.forEach((subscription) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${subscription.userId.username}</td>
+        <td>${subscription.userId.email}</td>
+        <td>${new Date(subscription.subscriptionDate).toLocaleDateString()}</td>
+        <td>${new Date(subscription.expirationDate).toLocaleDateString()}</td>
+        <td>${subscription.isActive ? "Active" : "Inactive"}</td>
+        <td>
+          <button onclick="setSubscriptionInactive('${subscription._id}')">Set Inactive</button>
+          <button onclick="deleteSubscription('${subscription._id}')">Delete</button>
+          <button onclick="editSubscription('${subscription._id}', '${subscription.expirationDate}')">Edit</button>
+        </td>
+      `;
+      tableBody.appendChild(row);
+    });
+  } catch (error) {
+    console.error("Error updating subscription table:", error);
+  }
+};
+
+    // Search users by name, email, or phone
+const searchUsers = async () => {
+  const username = document.getElementById("searchUsername").value.trim();
+  const email = document.getElementById("searchEmail").value.trim();
+  const phone = document.getElementById("searchPhone").value.trim();
+
+  if (!username && !email && !phone) {
+    alert("Please enter at least one search query.");
+    return;
+  }
+
+  const queryParams = new URLSearchParams({
+    username,
+    email,
+    phone,
+  });
+
+  const response = await fetch(`http://localhost:5000/api/user/users?${queryParams}`, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+    },
+  });
+  const users = await response.json();
+  renderUserList(users);
+};
+
+
+const confirmSelection = () => {
+  if (selectedUsers.length === 0) {
+    alert("No users selected.");
+    return;
+  }
+
+  // Perform any actions needed with the selected users
+  console.log("Selected Users:", selectedUsers);
+  alert("Selection confirmed!");
+  closeSelectUserDialog();
+};
+
+
+    // Render user list in the dialog box
+const renderUserList = (users) => {
+  const userList = document.getElementById("userList");
+  userList.innerHTML = ""; // Clear previous user list
+
+  users.forEach((user) => {
+    const email = user.email || "No Email";
+    const phone = user.phone || "No Phone";
+    const username = user.username || "No Username"; // Handle missing fields
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <span>${username} - ${email} - ${phone}</span>
+      <button onclick="selectUser('${user._id}', '${username}', '${email}', '${phone}')">Select</button>
+    `;
+    userList.appendChild(li);
+  });
+};
+
+const selectUser = (id, username, email, phone) => {
+  if (!selectedUsers.some((user) => user.id === id)) {
+    selectedUsers.push({ id, username, email, phone });
+    renderSelectedUsers();
+  }
+};
+
+const renderSelectedUsers = () => {
+  const selectedUsersDiv = document.getElementById("selectedUsers");
+  selectedUsersDiv.innerHTML = ""; // Clear the existing selections
+
+  selectedUsers.forEach((user, index) => {
+    const userDiv = document.createElement("div");
+    userDiv.className = "selected-user";
+    userDiv.innerHTML = `
+      <span>${user.username} - ${user.email} - ${user.phone}</span>
+      <button class="remove-btn" onclick="removeSelectedUser(${index})">Remove</button>
+    `;
+    selectedUsersDiv.appendChild(userDiv);
+  });
+
+  // Show a message if no users are selected
+  if (selectedUsers.length === 0) {
+    selectedUsersDiv.innerHTML = `<p>No users selected.</p>`;
+  }
+};
+
+const removeSelectedUser = (index) => {
+  // Remove the user at the specified index
+  selectedUsers.splice(index, 1);
+
+  // Re-render the selected users
+  renderSelectedUsers();
+};
+
+    // Close the dialog box
+    const closeSelectUserDialog = () => {
+      document.getElementById("selectUserDialog").style.display = "none";
+    };
+
+    fetchCourseInfo();
+    fetchSubscriptions();
+
+    window.onload = () => {
+        const courseId = new URLSearchParams(window.location.search).get("courseId");
+        if (courseId) {
+            updateSubscriptionTable(courseId); // Fetch and render table
+        } else {
+            alert("Course ID is missing. Cannot load subscriptions.");
+        }
+    };
+
+
+  </script>
+</body>
+</html>

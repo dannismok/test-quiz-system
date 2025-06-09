@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Update User</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    header {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+    }
+    header h1 {
+      margin: 0;
+    }
+    header button {
+      float: right;
+      background-color: white;
+      border: none;
+      color: #007bff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    header button:hover {
+      background-color: #e9ecef;
+    }
+    main {
+      padding: 20px;
+      max-width: 500px;
+      margin: 20px auto;
+      background-color: white;
+      border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, select, button {
+      margin-bottom: 15px;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    .success {
+      color: green;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Update User</h1>
+    <button onclick="window.location.href='/view-users.html'">Back to Users</button>
+  </header>
+  <main>
+    <form id="updateUserForm">
+      <h2>Edit User Information</h2>
+      <input type="hidden" id="userId"> <!-- Hidden input for user ID -->
+
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" placeholder="Enter username" required>
+
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" placeholder="Enter email" required>
+
+      <label for="role">Role</label>
+      <select id="role" name="role" required>
+        <option value="user">User</option>
+        <option value="admin">Admin</option>
+      </select>
+
+      <button type="submit">Update User</button>
+      <div id="statusMessage" class="error" style="display: none;"></div>
+    </form>
+  </main>
+
+  <script>
+    // Extract the user ID from the query parameters
+    const getUserIdFromQuery = () => {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("userId");
+    };
+
+    // Fetch user details and pre-fill the form
+    const fetchUserDetails = async (userId) => {
+      const token = localStorage.getItem("adminToken");
+      const statusMessage = document.getElementById("statusMessage");
+
+      if (!token) {
+        statusMessage.style.display = "block";
+        statusMessage.textContent = "Unauthorized. Please log in as an admin.";
+        return;
+      }
+
+      try {
+        const response = await fetch(`http://localhost:5000/api/user/users/${userId}`, {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          }
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message);
+        }
+
+        const user = await response.json();
+        document.getElementById("userId").value = user._id;
+        document.getElementById("username").value = user.username;
+        document.getElementById("email").value = user.email;
+        document.getElementById("role").value = user.role;
+      } catch (error) {
+        statusMessage.style.display = "block";
+        statusMessage.textContent = `Error: ${error.message}`;
+      }
+    };
+
+    // Handle form submission to update user
+    const updateUserForm = document.getElementById("updateUserForm");
+    updateUserForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const token = localStorage.getItem("adminToken");
+      const userId = document.getElementById("userId").value;
+      const username = document.getElementById("username").value;
+      const email = document.getElementById("email").value;
+      const role = document.getElementById("role").value;
+
+      const statusMessage = document.getElementById("statusMessage");
+
+      try {
+        const response = await fetch(`http://localhost:5000/api/user/users/${userId}`, {
+          method: "PUT",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ username, email, role }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message);
+        }
+
+        statusMessage.style.display = "block";
+        statusMessage.className = "success";
+        statusMessage.textContent = "User updated successfully!";
+      } catch (error) {
+        statusMessage.style.display = "block";
+        statusMessage.className = "error";
+        statusMessage.textContent = `Error: ${error.message}`;
+      }
+    });
+
+    // Initialize the form with user details
+    const userId = getUserIdFromQuery();
+    if (userId) {
+      fetchUserDetails(userId);
+    } else {
+      document.getElementById("statusMessage").style.display = "block";
+      document.getElementById("statusMessage").textContent = "Error: No user ID provided.";
+    }
+  </script>
+</body>
+</html>
