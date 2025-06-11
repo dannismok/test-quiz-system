@@ -17,25 +17,42 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.get('/:quizId', async (req, res) => {
-    const { quizId } = req.params;
+router.get("/:quizId", async (req, res) => {
+  const { quizId } = req.params;
 
-    try {
-        if (!mongoose.Types.ObjectId.isValid(quizId)) {
-            return res.status(400).json({ error: 'Invalid quizId format' });
-        }
+  try {
+    const quiz = await Quiz.findById(quizId).populate({
+      path: "questions.questionId",
+      model: "Question",
+    });
 
-        const quiz = await Quiz.findById(quizId).populate('questions');
-        if (!quiz) {
-            return res.status(404).json({ error: 'Quiz not found' });
-        }
-
-        res.status(200).json(quiz);
-    } catch (error) {
-        console.error('Error fetching quiz:', error);
-        res.status(500).json({ error: 'Internal server error' });
+    if (!quiz) {
+      return res.status(404).json({ message: "Quiz not found." });
     }
+
+    // Add `correctAnswers` dynamically based on options
+    const updatedQuestions = quiz.questions.map((question) => {
+      const questionDetails = question.questionId.toObject(); // Convert Mongoose document to plain object
+      questionDetails.correctAnswers = questionDetails.options
+        .filter((option) => option.isCorrect) // Find options with `isCorrect: true`
+        .map((option) => option.text); // Extract the text of correct options
+      return { ...question, questionId: questionDetails }; // Replace questionId with updated details
+    });
+
+    const updatedQuiz = {
+      ...quiz.toObject(), // Convert the rest of the quiz document
+      questions: updatedQuestions, // Replace questions with updated ones
+    };
+
+    console.log("Populated Quiz Data with Correct Answers:", JSON.stringify(updatedQuiz, null, 2)); // Debug log
+
+    res.status(200).json(updatedQuiz);
+  } catch (err) {
+    console.error("Error fetching quiz details:", err.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 });
+
 
 // Add a New Quiz
 // Create a New Quiz

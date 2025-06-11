@@ -12,6 +12,9 @@ dotenv.config({ path: path.resolve(__dirname, `.env.${env}`) });
 
 const express = require("express");
 
+console.log("Environment:", process.env.NODE_ENV);
+console.log("Loaded SECRET_KEY:", process.env.SECRET_KEY);
+
 const app = express();
 // Middleware to parse JSON request bodies
 app.use(express.json()); // This parses `Content-Type: application/json` requests

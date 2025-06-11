@@ -19,7 +19,7 @@ const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const client = new OAuth2Client(CLIENT_ID);
 
 const router = express.Router();
-const SECRET_KEY = process.env.SECRET_KEY || "unisoft";
+const SECRET_KEY = process.env.SECRET_KEY;
 
 // Google Login Route
 // Google Login Route
@@ -70,6 +70,7 @@ router.post("/google-login", async (req, res) => {
       SECRET_KEY,
       { expiresIn: "1h" }
     );
+    console.log("SECRET_KEY during Google login token generation:", SECRET_KEY);
 
     // Respond with token, userId, and username
     res.status(200).json({
@@ -154,6 +155,7 @@ router.post("/login", async (req, res) => {
       SECRET_KEY,
       { expiresIn: "1h" }
     );
+    console.log("SECRET_KEY during token generation:", SECRET_KEY);
     console.log("Generated Token:", token);
 
     // Respond with the token, userId, and username

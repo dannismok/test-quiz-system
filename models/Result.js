@@ -21,22 +21,30 @@ const resultSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    answers: {
-      type: [Number], // Store indices of the user's selected answers
+    timeTaken: {
+      type: Number, // Time taken in seconds
+      required: true,
+    },
+    creditsUsed: {
+      type: Number, // Number of credits consumed for this attempt
       required: true,
     },
     submittedAt: {
       type: Date,
       default: Date.now, // Automatically set the date when creating the document
     },
-    timeTaken: {
-      type: Number, // Time taken in seconds
-      required: true, // Make it required since it's essential for quiz history
-    },
-    creditsUsed: {
-      type: Number, // Number of credits consumed for this attempt
-      required: true, // Make it required to track usage
-    },
+    answers: [
+      {
+        questionId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Question",
+          required: true,
+        }, // Reference to the question
+        selectedAnswer: { type: Schema.Types.Mixed }, // Store user's selected answer(s)
+        isCorrect: { type: Boolean, required: true }, // Whether the user's answer is correct
+        correctAnswer: { type: Schema.Types.Mixed }, // Store the correct answer(s) for reference
+      },
+    ],
   },
   { timestamps: true } // Enable createdAt and updatedAt fields
 );
